@@ -22,7 +22,7 @@ non terminal exp, global_var_init, local_var, block, array_dec;
 non terminal  local_var_init, local_var_list, var_list, ass_list, ass_exp;
 non terminal for_loop, stmt_list, stmt, loop_cond, assignment, var;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
-non terminal finish, function_decl, print_func, func_param_list, func_call, declaration;
+non terminal function_decl_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
 //Precedences
 precedence left OR;
 precedence left AND;
@@ -36,7 +36,10 @@ precedence right HAT;
 /***********************/
 /**** GRAMMAR START ****/
 /***********************/
-start with stmt_list;
+start with prog;
+
+
+prog ::= function_decl_list stmt_list ;
 
 
 /*****************************/
@@ -50,9 +53,11 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment;
 /**** INSTRUCTIONS ****/
 /**********************/
 
+
+
 stmt_list ::= stmt_list stmt | stmt;
 
-stmt ::= if_block | for_loop | print_func | ret | declaration | func_call | function_decl | while_loop |  repeat_loop | block;
+stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop |  repeat_loop | block;
 
 
 /* expressions: 
@@ -159,6 +164,8 @@ else_block ::= ELSE stmt_list | ;
 /*******************/
 /**** FUNCTIONS ****/
 /*******************/
+
+function_decl_list ::= function_decl_list function_decl | function_decl;
 
 function_decl ::= FUNCTION ID RO func_param_list RC stmt_list ret END;
 
