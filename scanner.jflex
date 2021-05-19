@@ -40,7 +40,7 @@ nl = \r|\n|\r\n|" "
 "for"      {return symbol(sym.FOR);}
 "if"       {return symbol(sym.IF);}
 "else"     {return symbol(sym.ELSE);}
-"elseif"   {return symbol(sym.ELSEIF);}
+
 "end"      {return symbol(sym.END);}
 "local"    {return symbol(sym.LOCAL);}
 /*

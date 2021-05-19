@@ -12,9 +12,9 @@ import java.io.FileWriter;
 
 
 //Terminal tokens
-terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, XOR, NOT, SO, SC, EQ, NOTEQ;
+terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, NOT, SO, SC, EQ, NOTEQ;
 terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
-terminal DO, FOR, IF, ELSE, THEN, ELSEIF, END, LOCAL;
+terminal DO, FOR, IF, ELSE, THEN, END, LOCAL;
 terminal NUMBER, ID, STRING, NIL;
 terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
 //Non terminal tokens
@@ -22,7 +22,7 @@ non terminal exp, global_var_init, local_var, block, array_dec;
 non terminal  local_var_init, local_var_list, var_list, ass_list, ass_exp;
 non terminal for_loop, stmt_list, stmt, loop_cond, assignment, var;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
-non terminal print_func_args, function_decl_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
+non terminal print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
 //Precedences
 precedence left OR;
 precedence left AND;
@@ -39,7 +39,7 @@ precedence right HAT;
 start with prog;
 
 
-prog ::= prog function_decl | prog stmt  | function_decl | stmt ;
+prog ::= func_list  stmt ;
 
 
 /*****************************/
@@ -158,7 +158,8 @@ repeat_loop ::= REPEAT stmt_list UNTIL loop_cond ;
 
 //if instruction
 
-if_block ::= IF  exp  THEN  stmt_list  else_block END;
+if_block ::= IF  exp  THEN  stmt_list  else_block END
+                | IF error else_block END{: System.out.println("error");:};
 
 else_block ::= ELSE stmt_list | ;
 
@@ -168,7 +169,7 @@ else_block ::= ELSE stmt_list | ;
 /*******************/
 
 
-
+func_list ::= | func_list function_decl;
 function_decl ::= FUNCTION ID RO func_param_list RC stmt_list END;
 
 

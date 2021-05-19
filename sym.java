@@ -6,49 +6,47 @@
 /** CUP generated class containing symbol constants. */
 public class sym {
   /* terminals */
-  public static final int FUNCTION = 40;
-  public static final int SO = 11;
+  public static final int FUNCTION = 38;
+  public static final int SO = 10;
   public static final int MAJ = 4;
-  public static final int XOR = 9;
-  public static final int REPEAT = 38;
-  public static final int SC = 12;
-  public static final int FOR = 26;
-  public static final int MINUS = 20;
-  public static final int STAR = 21;
-  public static final int NOT = 10;
+  public static final int REPEAT = 36;
+  public static final int SC = 11;
+  public static final int FOR = 25;
+  public static final int MINUS = 19;
+  public static final int STAR = 20;
+  public static final int NOT = 9;
   public static final int AND = 7;
-  public static final int ELSEIF = 30;
-  public static final int CM = 24;
+  public static final int CM = 23;
   public static final int UMIN = 3;
-  public static final int NIL = 36;
+  public static final int NIL = 34;
   public static final int OR = 8;
-  public static final int DIV = 22;
-  public static final int UNTIL = 39;
-  public static final int RO = 15;
+  public static final int DIV = 21;
+  public static final int UNTIL = 37;
+  public static final int RO = 14;
   public static final int MIN_EQ = 5;
-  public static final int PLUS = 19;
+  public static final int PLUS = 18;
   public static final int MIN = 2;
-  public static final int IF = 27;
-  public static final int ID = 34;
+  public static final int IF = 26;
+  public static final int ID = 32;
   public static final int EOF = 0;
-  public static final int RETURN = 41;
+  public static final int RETURN = 39;
   public static final int error = 1;
-  public static final int RC = 16;
-  public static final int HAT = 23;
-  public static final int NUMBER = 33;
-  public static final int BO = 17;
-  public static final int EQ = 13;
-  public static final int ELSE = 28;
-  public static final int BC = 18;
-  public static final int WHILE = 37;
-  public static final int THEN = 29;
-  public static final int END = 31;
-  public static final int STRING = 35;
-  public static final int LOCAL = 32;
+  public static final int RC = 15;
+  public static final int HAT = 22;
+  public static final int NUMBER = 31;
+  public static final int BO = 16;
+  public static final int EQ = 12;
+  public static final int ELSE = 27;
+  public static final int BC = 17;
+  public static final int WHILE = 35;
+  public static final int THEN = 28;
+  public static final int END = 29;
+  public static final int STRING = 33;
+  public static final int LOCAL = 30;
   public static final int MAJ_EQ = 6;
-  public static final int PRINT = 42;
-  public static final int DO = 25;
-  public static final int NOTEQ = 14;
+  public static final int PRINT = 40;
+  public static final int DO = 24;
+  public static final int NOTEQ = 13;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -59,7 +57,6 @@ public class sym {
   "MAJ_EQ",
   "AND",
   "OR",
-  "XOR",
   "NOT",
   "SO",
   "SC",
@@ -80,7 +77,6 @@ public class sym {
   "IF",
   "ELSE",
   "THEN",
-  "ELSEIF",
   "END",
   "LOCAL",
   "NUMBER",
@@ -97,49 +93,47 @@ public class sym {
 public String[] TT;
 	public sym(){
 		TT = new String[100];
-		TT[40]=new String("FUNCTION");
-		TT[11]=new String("SO");
+		TT[38]=new String("FUNCTION");
+		TT[10]=new String("SO");
 		TT[4]=new String("MAJ");
-		TT[9]=new String("XOR");
-		TT[38]=new String("REPEAT");
-		TT[12]=new String("SC");
-		TT[26]=new String("FOR");
-		TT[20]=new String("MINUS");
-		TT[21]=new String("STAR");
-		TT[10]=new String("NOT");
+		TT[36]=new String("REPEAT");
+		TT[11]=new String("SC");
+		TT[25]=new String("FOR");
+		TT[19]=new String("MINUS");
+		TT[20]=new String("STAR");
+		TT[9]=new String("NOT");
 		TT[7]=new String("AND");
-		TT[30]=new String("ELSEIF");
-		TT[24]=new String("CM");
+		TT[23]=new String("CM");
 		TT[3]=new String("UMIN");
-		TT[36]=new String("NIL");
+		TT[34]=new String("NIL");
 		TT[8]=new String("OR");
-		TT[22]=new String("DIV");
-		TT[39]=new String("UNTIL");
-		TT[15]=new String("RO");
+		TT[21]=new String("DIV");
+		TT[37]=new String("UNTIL");
+		TT[14]=new String("RO");
 		TT[5]=new String("MIN_EQ");
-		TT[19]=new String("PLUS");
+		TT[18]=new String("PLUS");
 		TT[2]=new String("MIN");
-		TT[27]=new String("IF");
-		TT[34]=new String("ID");
+		TT[26]=new String("IF");
+		TT[32]=new String("ID");
 		TT[0]=new String("EOF");
-		TT[41]=new String("RETURN");
+		TT[39]=new String("RETURN");
 		TT[1]=new String("error");
-		TT[16]=new String("RC");
-		TT[23]=new String("HAT");
-		TT[33]=new String("NUMBER");
-		TT[17]=new String("BO");
-		TT[13]=new String("EQ");
-		TT[28]=new String("ELSE");
-		TT[18]=new String("BC");
-		TT[37]=new String("WHILE");
-		TT[29]=new String("THEN");
-		TT[31]=new String("END");
-		TT[35]=new String("STRING");
-		TT[32]=new String("LOCAL");
+		TT[15]=new String("RC");
+		TT[22]=new String("HAT");
+		TT[31]=new String("NUMBER");
+		TT[16]=new String("BO");
+		TT[12]=new String("EQ");
+		TT[27]=new String("ELSE");
+		TT[17]=new String("BC");
+		TT[35]=new String("WHILE");
+		TT[28]=new String("THEN");
+		TT[29]=new String("END");
+		TT[33]=new String("STRING");
+		TT[30]=new String("LOCAL");
 		TT[6]=new String("MAJ_EQ");
-		TT[42]=new String("PRINT");
-		TT[25]=new String("DO");
-		TT[14]=new String("NOTEQ");
+		TT[40]=new String("PRINT");
+		TT[24]=new String("DO");
+		TT[13]=new String("NOTEQ");
 	}
 public String getTT(int i){return TT[i];}
 }
