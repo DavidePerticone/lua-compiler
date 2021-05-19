@@ -47,6 +47,7 @@ public Integer registerCount;
 
  public class SymbolTable{
         public ArrayList<ValueObj> varList;
+        public ArrayList<ValueObj> expList;
         public HashMap<String, ValueObj> varTable;
         public int nargs;
 
@@ -55,6 +56,7 @@ public Integer registerCount;
         public SymbolTable(SymbolTable p){
             this.varTable = new HashMap<String, ValueObj>();
             this.varList = new ArrayList<ValueObj>();
+            this.expList = new ArrayList<ValueObj>();
             this.nargs = 0;
             this.prev = p;
         }
@@ -152,6 +154,39 @@ action code {:
         // %2 = load double, double* @b, align 8
 
         return outName+" = " + "load " + outType+", "+inputType+"* "+inputName+", "+"align "+align;
+
+    }
+
+    public void initVar(ValueObj n, ValueObj x){
+                                    //if the variable has never been used before, it means that must be declared
+                        if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
+                            
+                            n.setDouble(); //set type number in the variable
+                            n.setGlobal();
+                            //@X = global i32 17
+                            //createGlovalVarLLVM(String name, String type, String value){
+                            System.out.println(createGlovalVarLLVM(n.name, "double", ""+x.value));
+                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+x.value), true); //append to the Global declaration buffer
+
+                        }else if(n.type == Type.NUMBER && x.type == Type.IMMEDIATE){ //if type is not null, it has been already declared and must be loaded with a new value
+                                //store double 6.000000e+00, double* @a, align 8
+                               
+                                
+                                 appendMainBuffer( storeLLVM(""+x.value, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                        }else if(n.type == null && x.type == Type.NUMBER){ //if new var is undeclared and we initialize with a variable already declared
+                                 n.setDouble(); //set type number in the variable
+                                 n.setGlobal();
+                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
+                                //(String outName, String outType, String inputType, String inputName, String align )
+                                String reg = getRegister(); //get a new register
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true); //save the value of the var into the register
+                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
+                        }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
+                                  String reg = getRegister();
+                                 appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
+                                 appendMainBuffer(storeLLVM("%"+reg, "double", x.scope+n.name, "double", "8"), true); 
+                        }
+
 
     }
 :}
@@ -268,7 +303,7 @@ exp ::= RO exp:x RC
 ;
 
 //Expression list like 2*2, 2, 4, 2^2
-ass_list ::= ass_list CM ass_exp | ass_exp;
+ass_list ::= ass_list CM ass_exp:x {: currentSymTable.expList.add(x);   :}| ass_exp:x {: currentSymTable.expList.add(x);   :};
 ass_exp ::= exp:x {:
                         RESULT=x;
                 :}
@@ -286,45 +321,21 @@ local_var_init ::= local_var_list EQ ass_list;
 
 
 //global declaration and initialization
-global_var_init ::= var_list EQ ass_list;
+global_var_init ::= var_list EQ ass_list  {:
+
+                                            for(int i=0; i<currentSymTable.varList.size(); i++){
+                                                
+                                                initVar(currentSymTable.varList.get(i), currentSymTable.expList.get(i));
+
+                                            }
+
+
+                                            :};
 
 //simple assignemtn
 assignment ::= var:n EQ ass_exp:x {:
 
-                        //if the variable has never been used before, it means that must be declared
-                        if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
-                            
-                            n.setDouble(); //set type number in the variable
-                            n.setGlobal();
-                            //@X = global i32 17
-                            //createGlovalVarLLVM(String name, String type, String value){
-                            System.out.println(createGlovalVarLLVM(n.name, "double", ""+x.value));
-                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+x.value), true); //append to the Global declaration buffer
-
-                        }else if(n.type == Type.NUMBER && x.type == Type.IMMEDIATE){ //if type is not null, it has been already declared and must be loaded with a new value
-                                //store double 6.000000e+00, double* @a, align 8
-                               
-                                
-                                 appendMainBuffer( storeLLVM(""+x.value, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                        }else if(n.type == null && x.type == Type.NUMBER){ //if new var is undeclared and we initialize with a variable already declared
-                                 n.setDouble(); //set type number in the variable
-                                 n.setGlobal();
-                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                                //(String outName, String outType, String inputType, String inputName, String align )
-                                String reg = getRegister(); //get a new register
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true); //save the value of the var into the register
-                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
-                        }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
-                                  String reg = getRegister();
-                                 appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                 appendMainBuffer(storeLLVM("%"+reg, "double", x.scope+n.name, "double", "8"), true); 
-                        }
-
-
-
-
-
-
+                                        initVar(n, x);
 :};
 
 

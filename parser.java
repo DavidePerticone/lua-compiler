@@ -576,6 +576,7 @@ public Integer registerCount;
 
  public class SymbolTable{
         public ArrayList<ValueObj> varList;
+        public ArrayList<ValueObj> expList;
         public HashMap<String, ValueObj> varTable;
         public int nargs;
 
@@ -584,6 +585,7 @@ public Integer registerCount;
         public SymbolTable(SymbolTable p){
             this.varTable = new HashMap<String, ValueObj>();
             this.varList = new ArrayList<ValueObj>();
+            this.expList = new ArrayList<ValueObj>();
             this.nargs = 0;
             this.prev = p;
         }
@@ -681,6 +683,39 @@ class CUP$parser$actions {
         // %2 = load double, double* @b, align 8
 
         return outName+" = " + "load " + outType+", "+inputType+"* "+inputName+", "+"align "+align;
+
+    }
+
+    public void initVar(ValueObj n, ValueObj x){
+                                    //if the variable has never been used before, it means that must be declared
+                        if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
+                            
+                            n.setDouble(); //set type number in the variable
+                            n.setGlobal();
+                            //@X = global i32 17
+                            //createGlovalVarLLVM(String name, String type, String value){
+                            System.out.println(createGlovalVarLLVM(n.name, "double", ""+x.value));
+                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+x.value), true); //append to the Global declaration buffer
+
+                        }else if(n.type == Type.NUMBER && x.type == Type.IMMEDIATE){ //if type is not null, it has been already declared and must be loaded with a new value
+                                //store double 6.000000e+00, double* @a, align 8
+                               
+                                
+                                 appendMainBuffer( storeLLVM(""+x.value, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                        }else if(n.type == null && x.type == Type.NUMBER){ //if new var is undeclared and we initialize with a variable already declared
+                                 n.setDouble(); //set type number in the variable
+                                 n.setGlobal();
+                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
+                                //(String outName, String outType, String inputType, String inputName, String align )
+                                String reg = getRegister(); //get a new register
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true); //save the value of the var into the register
+                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
+                        }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
+                                  String reg = getRegister();
+                                 appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
+                                 appendMainBuffer(storeLLVM("%"+reg, "double", x.scope+n.name, "double", "8"), true); 
+                        }
+
 
     }
 
@@ -1100,7 +1135,10 @@ class CUP$parser$actions {
           case 39: // ass_list ::= ass_list CM ass_exp 
             {
               Object RESULT =null;
-
+		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
+		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
+		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
+		 currentSymTable.expList.add(x);   
               CUP$parser$result = parser.getSymbolFactory().newSymbol("ass_list",7, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
@@ -1109,7 +1147,10 @@ class CUP$parser$actions {
           case 40: // ass_list ::= ass_exp 
             {
               Object RESULT =null;
-
+		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
+		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
+		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
+		 currentSymTable.expList.add(x);   
               CUP$parser$result = parser.getSymbolFactory().newSymbol("ass_list",7, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
@@ -1177,7 +1218,16 @@ class CUP$parser$actions {
           case 47: // global_var_init ::= var_list EQ ass_list 
             {
               Object RESULT =null;
+		
 
+                                            for(int i=0; i<currentSymTable.varList.size(); i++){
+                                                
+                                                initVar(currentSymTable.varList.get(i), currentSymTable.expList.get(i));
+
+                                            }
+
+
+                                            
               CUP$parser$result = parser.getSymbolFactory().newSymbol("global_var_init",0, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
@@ -1194,40 +1244,7 @@ class CUP$parser$actions {
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
 		
 
-                        //if the variable has never been used before, it means that must be declared
-                        if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
-                            
-                            n.setDouble(); //set type number in the variable
-                            n.setGlobal();
-                            //@X = global i32 17
-                            //createGlovalVarLLVM(String name, String type, String value){
-                            System.out.println(createGlovalVarLLVM(n.name, "double", ""+x.value));
-                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+x.value), true); //append to the Global declaration buffer
-
-                        }else if(n.type == Type.NUMBER && x.type == Type.IMMEDIATE){ //if type is not null, it has been already declared and must be loaded with a new value
-                                //store double 6.000000e+00, double* @a, align 8
-                               
-                                
-                                 appendMainBuffer( storeLLVM(""+x.value, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                        }else if(n.type == null && x.type == Type.NUMBER){ //if new var is undeclared and we initialize with a variable already declared
-                                 n.setDouble(); //set type number in the variable
-                                 n.setGlobal();
-                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                                //(String outName, String outType, String inputType, String inputName, String align )
-                                String reg = getRegister(); //get a new register
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true); //save the value of the var into the register
-                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
-                        }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
-                                  String reg = getRegister();
-                                 appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                 appendMainBuffer(storeLLVM("%"+reg, "double", x.scope+n.name, "double", "8"), true); 
-                        }
-
-
-
-
-
-
+                                        initVar(n, x);
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("assignment",12, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
