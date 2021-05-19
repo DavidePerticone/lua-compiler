@@ -39,7 +39,7 @@ precedence right HAT;
 start with prog;
 
 
-prog ::= function_decl_list stmt_list ;
+prog ::= prog function_decl | prog stmt  | function_decl | stmt ;
 
 
 /*****************************/
@@ -55,7 +55,7 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment;
 
 
 
-stmt_list ::= stmt_list stmt | stmt;
+stmt_list ::= stmt_list stmt | stmt ;
 
 stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop |  repeat_loop | block;
 
@@ -165,7 +165,7 @@ else_block ::= ELSE stmt_list | ;
 /**** FUNCTIONS ****/
 /*******************/
 
-function_decl_list ::= function_decl_list function_decl | function_decl;
+
 
 function_decl ::= FUNCTION ID RO func_param_list RC stmt_list ret END;
 
@@ -175,8 +175,8 @@ ret ::= RETURN exp
 
 
 print_func ::= PRINT RO STRING RC 
-                | PRINT RO STRING CM func_param_list RC;
- 
+                | PRINT RO STRING CM func_param_list RC
+                | PRINT RO STRING CM func_call RC;
 
 func_param_list ::= func_param_list CM exp 
                     | exp     ;

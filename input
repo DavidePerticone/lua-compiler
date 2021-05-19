@@ -1,22 +1,47 @@
+do
+repeat
+   print("value of a:", a)
+   a = a + 1
+   c = 2*9+5*-5*6
+   repeat
+   print("value of a:", a)
+   a = a + 1
+until( a > 15 )
+repeat
+   print("value of a:", a)
+   a = a + 1
+until( a > 15 )
+repeat
+   print("value of a:", a)
+   a = a + 1
+until( a > 15 )
+until( a > 15 )
+end
+
+for i = 10,1,-1 
+do 
+   print("", i) 
+end
+
+a = 10
+
+while( a < 20 )
+do
+   print("value of a:", a)
+   a = a+1
+end
+
+
 function max(num1, num2)
 
    if (num1 > num2) then
-      result = num1[2-9-2*2]
-  end
-
-  if (num1 > num2) then
-      result = num1[2-9-2*2]
+      result = num1;
    else
-      result = num2
+      result = num2;
    end
 
-return 0
-
+   return result; 
 end
 
-a=2
-
-
-
-
-
+print("The maximum of the two numbers is ",max(10,4))
+print("The maximum of the two numbers is ",max(5,6))
