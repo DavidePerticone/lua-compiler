@@ -24,7 +24,7 @@ init with {:
    globalDecBuffer = new StringBuffer(); //buffer for global var declaration
    mainBuffer = new StringBuffer(); //buffer used for main function
    bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); //output file
-   registerCount = 1; //used as counter for SSA registers
+   
    /*Structure:
    Global buffer
    Function buffer
@@ -42,23 +42,24 @@ public StringBuffer funcBuffer;
 public StringBuffer globalDecBuffer;
 public StringBuffer mainBuffer;
 public BufferedWriter bwr;
-public Integer registerCount;
- public enum Type {NUMBER, TABLE, IMMEDIATE}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
- public class SymbolTable{
+public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
+
+public class SymbolTable{
         public ArrayList<ValueObj> varList;
         public ArrayList<ValueObj> expList;
         public HashMap<String, ValueObj> varTable;
         public int nargs;
-
+        public Integer registerCount; //used as counter for SSA registers
         SymbolTable prev;
-
+        
         public SymbolTable(SymbolTable p){
             this.varTable = new HashMap<String, ValueObj>();
             this.varList = new ArrayList<ValueObj>();
             this.expList = new ArrayList<ValueObj>();
             this.nargs = 0;
             this.prev = p;
+            registerCount=1;
         }
 
         public ValueObj get(String s){
@@ -72,7 +73,7 @@ public Integer registerCount;
     }
 
 
- public class ValueObj {
+public class ValueObj {
 
 		Double value;
         public String name;
@@ -102,6 +103,10 @@ public Integer registerCount;
             scope="%";
         }
 
+        public void setRNUM(){
+            this.type=Type.RNUM;
+        }
+
         
   
  
@@ -116,7 +121,7 @@ public Integer registerCount;
 
 action code {:
 
-  public void appendFuncBuffer(String s, boolean newLine){
+    public void appendFuncBuffer(String s, boolean newLine){
         funcBuffer.append(s);
         if (newLine)
             funcBuffer.append("\n");
@@ -135,7 +140,7 @@ action code {:
     }
 
     public String getRegister(){
-        return String.valueOf(registerCount++);
+        return String.valueOf(currentSymTable.registerCount++);
     }
 
     public String createGlovalVarLLVM(String name, String type, String value){
@@ -184,10 +189,100 @@ action code {:
                         }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
                                   String reg = getRegister();
                                  appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                 appendMainBuffer(storeLLVM("%"+reg, "double", x.scope+n.name, "double", "8"), true); 
+                                 appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
+                        }else if(n.type == Type.NUMBER && x.type == Type.RNUM){ //if var already declared and RHS is a register containing a num
+                            appendMainBuffer(storeLLVM("%"+x.name, "double", n.scope+n.name, "double", "8"), true); 
+
+                        }else if(n.type == null && x.type == Type.RNUM){ //if var already declared and RHS is a register containing a num
+                            n.setDouble(); //set type number in the variable
+                            n.setGlobal();
+                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
+                            appendMainBuffer(storeLLVM("%"+x.name, "double", n.scope+n.name, "double", "8"), true); 
+
                         }
 
 
+    }
+
+    public ValueObj operation(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
+                            ValueObj RESULT=null; //final result to return
+                            String a; //variables for registers
+                            String b;
+                            String r;
+                            if( x.type==Type.NUMBER && y.type==Type.NUMBER){ //if both operands are variables
+                                a=getRegister(); //we nned three register
+                                b=getRegister();
+                                r=getRegister();
+                                appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true); //load value of first
+                                appendMainBuffer(loadLLVM("%"+b, "double", "double", y.scope+y.name, "8" ), true); //load value of second
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+a+", %"+b, true); //perform operation and save in register
+                                RESULT=new ValueObj(r); //the returning value is a register containing a number, so we set the name as the number of the register
+                                RESULT.setLocal();
+                                RESULT.setRNUM(); //we set the type as RNUM because it is a number into a register
+                            }else if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
+                                ///create switch
+                                if(operation.compareTo("fadd")==0)
+                                    RESULT=new ValueObj(x.value+y.value);
+                                else if(operation.compareTo("fsub")==0)
+                                    RESULT=new ValueObj(x.value-y.value);
+                                else if(operation.compareTo("fmul")==0)
+                                    RESULT=new ValueObj(x.value*y.value);
+                                else if(operation.compareTo("fdiv")==0)
+                                    RESULT=new ValueObj(x.value/y.value);
+                                RESULT.type=Type.IMMEDIATE; //the returning value is itself and integer
+                            }else if((x.type==Type.IMMEDIATE || x.type==Type.RNUM) && y.type==Type.NUMBER ){ //if one is an (immedaite or RNUM) and the other a var
+                                a=getRegister(); 
+                                r=getRegister();
+                                if(x.type==Type.RNUM){ //if it is a RNUM it is enough to set the name to the register name with %
+                                    x.name="%"+x.name;
+                                }else{
+                                     
+                                    x.name=""+x.value; //else just use the plain value
+                                     
+                                }
+                                appendMainBuffer(loadLLVM("%"+a, "double", "double", y.scope+y.name, "8"), true);
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+x.name+", %"+a, true);
+                                RESULT=new ValueObj(r);
+                               RESULT.setLocal();
+                                 RESULT.setRNUM();
+                            }else if((y.type==Type.IMMEDIATE || y.type==Type.RNUM) && x.type==Type.NUMBER){
+                                 a=getRegister();
+                                 r=getRegister();
+                                 if(y.type==Type.RNUM){
+                                    y.name="%"+y.name;
+                                }else{
+                                     
+                                   y.name=""+y.value;
+                                     
+                                }
+                                appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true);
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+y.name+", %"+a, true);
+                                RESULT=new ValueObj(r);
+                                RESULT.setLocal();
+                                RESULT.setRNUM();
+                            }else if(x.type==Type.RNUM && y.type==Type.RNUM ){ //if both operands are register contaning values
+                                r=getRegister(); //create return register
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+x.name+", %"+y.name, true); //simply perform the operation
+                                RESULT=new ValueObj(r);
+                                RESULT.setLocal();
+                                RESULT.setRNUM();//set result to RNUM
+                            }else if(x.type==Type.RNUM && y.type==Type.IMMEDIATE){
+                                r=getRegister(); //create return register
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+x.name+", "+y.value, true); //simply perform the operation
+                                RESULT=new ValueObj(r);
+                                RESULT.setLocal();
+                                RESULT.setRNUM();//set result to RNUM
+
+                            }else if(x.type==Type.IMMEDIATE && y.type==Type.RNUM){
+                                r=getRegister(); //create return register
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+y.name+", "+x.value, true); //simply perform the operation
+                                RESULT=new ValueObj(r);
+                                RESULT.setLocal();
+                                RESULT.setRNUM();//set result to RNUM
+
+                            }
+                            return RESULT;
+                           
     }
 :}
 
@@ -283,11 +378,11 @@ exp ::= RO exp:x RC
 | NIL
 | func_call
 /* Arithmetic expressions */
-| exp  PLUS exp  
-| exp  MINUS exp  
-| exp  STAR exp  
-| exp  DIV exp  
-| exp HAT exp
+| exp:x  PLUS exp:y  {:  RESULT=operation("fadd", x, y); :}
+| exp:x  MINUS exp:y  {: RESULT=operation("fsub", x, y);  :}
+| exp:x  STAR exp:y   {: RESULT=operation("fmul", x, y);  :}
+| exp:x  DIV exp:y   {: RESULT=operation("fdiv", x, y);  :}
+| exp:x HAT exp:y
 /* Logical expressions */
 | exp  AND exp 
 | exp  OR exp  
@@ -321,22 +416,17 @@ local_var_init ::= local_var_list EQ ass_list;
 
 
 //global declaration and initialization
-global_var_init ::= var_list EQ ass_list  {:
-
-                                            for(int i=0; i<currentSymTable.varList.size(); i++){
-                                                
+global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate error if not
+                                            for(int i=0; i<currentSymTable.varList.size(); i++){                                               
                                                 initVar(currentSymTable.varList.get(i), currentSymTable.expList.get(i));
-
                                             }
-
-
+                                            currentSymTable.varList.clear();
+                                            currentSymTable.expList.clear();
+                                            
                                             :};
 
 //simple assignemtn
-assignment ::= var:n EQ ass_exp:x {:
-
-                                        initVar(n, x);
-:};
+assignment ::= var:n EQ ass_exp:x {:initVar(n, x);:};
 
 
 
@@ -410,8 +500,13 @@ else_block ::= ELSE stmt_list | ;
 
 
 func_list ::= | func_list function_decl;
-function_decl ::= FUNCTION ID RO func_param_list RC stmt_list END;
+function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable); :}ID RO func_param_list RC stmt_list END {: currentSymTable = currentSymTable.prev;:};
 
+
+/*define <retval> @<funcName> (<type>, ..., <type>) {
+  ...
+  ret <type> <expression>
+}*/
 
 ret ::= RETURN exp;
         //| RETURN;
