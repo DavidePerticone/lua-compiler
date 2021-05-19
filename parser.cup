@@ -1,0 +1,183 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map.*;
+import java.util.ArrayList;
+import java.util.regex.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+
+
+
+
+//Terminal tokens
+terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, XOR, NOT, SO, SC, EQ, NOTEQ;
+terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
+terminal DO, FOR, IF, ELSE, THEN, ELSEIF, END, LOCAL;
+terminal NUMBER, ID, STRING;
+terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
+//Non terminal tokens
+non terminal exp, global_var_init, local_var, block, array_dec;
+non terminal  local_var_init, local_var_list, var_list, ass_list, ass_exp;
+non terminal for_loop, stmt_list, stmt, loop_cond, assignment, var;
+non terminal while_loop, repeat_loop, if_block, else_block, ret;
+non terminal finish, function_decl, print_func, func_param_list, func_call, declaration;
+//Precedences
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+precedence left MIN, MAJ, MIN_EQ, MAJ_EQ, EQ, NOTEQ;
+precedence left PLUS, MINUS;
+precedence left STAR, DIV;
+precedence left NOT, UMIN;
+precedence right HAT;
+
+/***********************/
+/**** GRAMMAR START ****/
+/***********************/
+start with stmt_list;
+
+
+/*****************************/
+/**** DECLARATIONS ****/
+/*****************************/
+
+declaration ::= local_var_init | local_var_list | global_var_init | assignment;
+
+
+/**********************/
+/**** INSTRUCTIONS ****/
+/**********************/
+
+stmt_list ::= stmt_list stmt | stmt;
+
+stmt ::= if_block | for_loop | print_func | ret | declaration | func_call | function_decl | while_loop |  repeat_loop | block;
+
+
+/* expressions: 
+    Arithmetic
+    Logical
+    Relational
+    Concatenation ---TODO
+*/
+
+exp ::= RO exp:x RC 
+| NUMBER 
+| MINUS NUMBER %prec UMIN
+| var
+/* Arithmetic expressions */
+| exp  PLUS exp  
+| exp  MINUS exp  
+| exp  STAR exp  
+| exp  DIV exp  
+| exp HAT exp
+/* Logical expressions */
+| exp  AND exp 
+| exp  OR exp  
+| NOT exp
+/* Relational expressions */
+| exp  EQ EQ exp  
+| exp  NOTEQ exp  
+| exp  MIN exp  
+| exp  MAJ exp  
+| exp  MIN_EQ exp  
+| exp  MAJ_EQ exp  
+| RO error RC 
+;
+
+//Expression list like 2*2, 2, 4, 2^2
+ass_list ::= ass_list CM ass_exp | ass_exp;
+ass_exp ::= exp | array_dec;
+
+//1-D table
+
+array_dec ::= BO ass_list BC | BO BC;
+
+//local declaration
+
+local_var_list ::= LOCAL var_list;
+local_var_init ::= local_var_list EQ ass_list;
+
+
+//global declaration and initialization
+global_var_init ::= var_list EQ ass_list;
+
+//simple assignemtn
+assignment ::= var EQ ass_exp;
+
+
+
+/*******************/
+/**** VARIABLES ****/
+/*******************/
+
+//Variable list like a, b, c, d
+var_list ::= var_list CM ID | ID 
+ ;
+
+//simple var
+var ::= ID | ID SO exp SC;
+
+
+
+
+/***********************************/
+/**** FLOW CONTROL INSTRUCTIONS ****/
+/***********************************/
+
+//block do-end
+
+block ::= DO stmt_list END;
+
+//loop condition
+loop_cond ::=  exp ;
+
+//loop 
+
+for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END 
+           ;
+
+//while loop        
+
+while_loop ::= WHILE RO loop_cond RC DO stmt_list END;
+
+
+//repeat-until loop
+
+repeat_loop ::= REPEAT stmt_list UNTIL RO loop_cond RC; 
+
+
+
+//if instruction
+
+if_block ::= IF RO exp RC THEN  stmt_list  else_block END;
+
+else_block ::= ELSE stmt_list | ;
+
+
+/*******************/
+/**** FUNCTIONS ****/
+/*******************/
+
+function_decl ::= FUNCTION ID RO func_param_list RC stmt_list ret END;
+
+
+ret ::= RETURN exp
+        | RETURN;
+
+
+print_func ::= PRINT RO STRING RC 
+                | PRINT RO STRING CM func_param_list RC;
+ 
+
+func_param_list ::= func_param_list CM exp 
+                    | exp     ;
+
+
+func_call ::= ID:name RO  func_param_list RC;
+
+
+
+
+

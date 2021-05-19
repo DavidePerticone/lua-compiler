@@ -1,0 +1,1208 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+init with {:
+    stringList = new ArrayList<String>();
+    globalVarList = new ArrayList<>();
+    funcList = new HashMap<String, TypeItem>();
+    globalVarTable  = new HashMap<String, ValueObj>();
+    indexString = 0;
+    globalVarCount = 0;
+    loopCount = 0;
+    totLoopCount = 0;
+
+    outputBuffer = new StringBuffer();
+
+    errorBuffer = new StringBuffer();
+    semErrors = 0;
+    synWarnings = 0;
+:};
+
+parser code {:
+    public StringBuffer outputBuffer;
+
+    public StringBuffer errorBuffer;
+    public int semErrors;
+    public int synWarnings;
+
+    public ArrayList<String> stringList;
+    public ArrayList<ValueObj> globalVarList;
+    public HashMap<String, TypeItem> funcList;
+    public HashMap<String, ValueObj> globalVarTable;
+    public int indexString;
+    public int globalVarCount;
+    public int loopCount;
+    public int totLoopCount;
+
+    public class SymbolTable{
+        public ArrayList<ValueObj> varList;
+        public HashMap<String, ValueObj> varTable;
+        public int nargs;
+
+        SymbolTable prev;
+
+        public SymbolTable(SymbolTable p){
+            this.varTable = new HashMap<String, ValueObj>();
+            this.varList = new ArrayList<ValueObj>();
+            this.nargs = 0;
+            this.prev = p;
+        }
+
+        public ValueObj get(String s){
+            for (SymbolTable sym = this; sym != null; sym = sym.prev){
+                ValueObj found = sym.varTable.get(s);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+    }
+
+    public class FuncObj {
+
+        public String name;
+        public int nargsTot;
+        public ArrayList<ValueObj> paramsList;
+        public int varCount;
+        public boolean ret;
+        public SymbolTable currentSymbolTable;
+
+        public FuncObj(String name){
+            this.name = name;
+            this.paramsList = new ArrayList<>();
+            this.varCount = 1;
+            this.nargsTot = 0;
+            this.ret = false;
+            this.currentSymbolTable = null;
+        }
+    }
+
+    public class ValueObj {
+
+        public String value;
+        public String index;
+        public TypeItem typeItem;
+
+        public ValueObj(String value, TypeItem typeItem){
+            this.value = value;
+            this.typeItem = typeItem;
+        }
+
+         public ValueObj(String value, TypeItem typeItem, String index){
+            this.value = value;
+            this.typeItem = typeItem;
+            this.index = index;
+        }
+
+        public ValueObj(String value){
+            this.value = value;
+        }
+
+        public ValueObj(String value, String index){
+            this.value = value;
+            this.index = index;
+        }
+       
+        public void setTypeItem(TypeItem typeItem){
+            this.typeItem = typeItem;
+        }
+        
+    }
+
+    public enum Tag {BASE, ARRAY, POINTER_ARRAY, POINTER, IMMEDIATE};
+
+     public class TypeItem {
+
+        public Tag tag;
+        public String type;
+        public int align;
+        public int size;
+        public boolean isPointer;
+
+        public TypeItem(Tag tag, String type){
+            this.tag = tag;
+            this.type = type;
+            this.size = -1;
+            this.isPointer = false;
+        }
+
+        public TypeItem(Tag tag, String type, int align){
+            this.tag = tag;
+            this.type = type;
+            this.align = align;
+            this.isPointer = false;
+        }
+
+        public void setSize(int size){
+            this.size = size;
+        }
+
+        public void setPointer(boolean isPointer){
+            this.isPointer = isPointer;
+        }
+
+        public void setTag(Tag tag){
+            this.tag = tag;
+        }
+    }
+
+    public FuncObj currentFunc;
+
+    public int getLine() {
+        if (((Symbol)stack.elementAt(tos)).left != -1){
+            return ((Symbol)stack.elementAt(tos)).left+1;
+        }else return -1;
+    }
+
+    public int getColumn() {
+        if (((Symbol)stack.elementAt(tos)).left != -1){
+            return ((Symbol)stack.elementAt(tos)).right+1;
+        }else return -1;
+    }
+
+    public Object stack(int position) {
+        return (((Symbol)stack.elementAt(tos+position)).value);
+    }
+
+    public int genLabelString(){
+        return indexString++;
+    }
+
+:};
+
+action code {:
+
+    private void printStrings(){
+
+        System.out.println("declare i32 @printf(i8*, ...)"); //declare printf instruction
+
+        for (int i = 0; i < parser.stringList.size(); i++){
+            String s = parser.stringList.get(i);
+            s = s.substring(1, s.length() - 1);
+            int length = s.length();
+            if (!s.contains("\\n"))
+                length++;
+            s = s.replace("\\n", "\\0A");
+            s = s + "\\00";
+            System.out.println("@.str." + i + " = private constant [" + length + " x i8] c\"" + s + "\", align 1");
+        }
+    }
+
+    private ValueObj checkVariable(String name){
+        ValueObj val;
+
+        val = currentFunc.currentSymbolTable.get(name);
+        if (val == null)
+            val = globalVarTable.get(name);
+
+        if (val == null){
+            genSemError("Variable \"" + name + "\" is not declared");
+            return new ValueObj("ND", new TypeItem(Tag.BASE, "ND"), null); //return fake value to avoid java errors
+        }
+        return val;
+    }
+
+    private void CheckTypeAssignment(TypeItem t1, TypeItem t2){
+        if (!t1.type.equals(t2.type)){
+            genSemWarning("Assignment of uncompatible types (" + t2.type + " value to a " + t1.type + " variable)");
+        }else if (t1.tag == Tag.POINTER && !t2.isPointer){
+            genSemWarning("Assignment of uncompatible types (" + t2.type + " value to a *" + t1.type + " variable)");
+        }
+    }
+
+    private void CheckTypeOperation(TypeItem t1, TypeItem t2){
+        if (!t1.type.equals(t2.type)){
+            genSemWarning("Operation between " + t1.type + " and " + t2.type);
+        }
+    }
+
+    private void genSemError(String message){
+        errorBuffer.append("SEMANTIC ERROR (line: " + parser.getLine() + " col: " + parser.getColumn() + ") -> " + message + "\n");
+        semErrors++;
+    }
+
+    private void genSemWarning(String message){
+        errorBuffer.append("SEMANTIC WARNING (line: " + parser.getLine() + " col: " + parser.getColumn() + ") -> " + message + "\n");
+    }
+
+    private void genSynWarning(String message){
+        errorBuffer.append("SYNTACTIC WARNING (line: " + parser.getLine() + " col: "+parser.getColumn() + ") -> " + message + "\n");
+        synWarnings++;
+    }
+
+    public void append(String s, boolean newLine){
+        outputBuffer.append(s);
+        if (newLine)
+            outputBuffer.append("\n");
+    }
+        
+:}
+
+// Terminal tokens
+terminal FUNC, PRINT, RO, RC, BO, BC, EQ, PLUS, MINUS, STAR, DIV;
+terminal MIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, XOR, NOT, SO, SC, COL, S;
+terminal Integer INT;
+terminal Double DOUBLE;
+terminal FOR, IF, ELSE, CM, RET, VAR, CONST;
+terminal String STRING, ID, INT_TYPE, FLOAT64_TYPE;
+
+// Non terminal tokens
+non terminal prog, global_decl, func_list, func;
+non terminal stmt_list, stmt, print, ass_list, func_param_list, global_var_list, global_ass_list, short_declaration;
+non terminal String global_decl_keyword;
+non terminal global_decl_list, param_list, param, var_list, ret, var_stmt_list, assignment, declaration, ass_exp;
+non terminal empty, empty1;
+non terminal ValueObj exp, global_ass_exp, condition, var;
+non terminal for_loop, init_statement, if_block, else_block, func_call;
+non terminal TypeItem type, ret_type;
+
+//Precedences
+precedence left OR;
+precedence left AND;
+precedence left XOR;
+precedence left NOT;
+precedence left MIN, MAJ, MIN_EQ, MAJ_EQ, EQ;
+precedence left PLUS, MINUS;
+precedence left STAR, DIV;
+
+/***********************/
+/**** GRAMMAR START ****/
+/***********************/
+start with prog;
+
+prog ::= global_decl_list func_list {: 
+    //check if main function is declared
+    if (funcList.get("main") == null)
+        genSemWarning("'main' function not found");
+
+    //print code if there are no syntactic warnings e/o semantic errors
+    if (semErrors == 0 && synWarnings == 0){
+        printStrings();
+        System.out.println(outputBuffer);
+    }else{
+        System.err.println("\nOutput cannot be generated due to following errors:\n");
+    }
+    //print error buffer
+    System.err.println(errorBuffer);
+:};
+
+/*****************************/
+/**** GLOBAL DECLARATIONS ****/
+/*****************************/
+
+//global declaration list
+global_decl_list ::= global_decl_list global_decl | ;
+
+//global declaration only
+global_decl ::= global_decl_keyword:k global_var_list type:t {:
+    for (int i = 0; i < globalVarList.size(); i++){
+        ValueObj p = globalVarList.get(i);
+        ValueObj val = new ValueObj("@" + p.value, t);
+        globalVarTable.put(p.value, val);
+
+        if (t.tag == Tag.BASE)
+            append(("@" + p.value + " = " + k + " " + t.type + " 0, align " + val.typeItem.align), true);
+        else if (t.tag == Tag.ARRAY)
+            append(("@" + p.value + " = " + k + " [" + t.size + " x " + t.type + "] zeroinitializer, align " + val.typeItem.align), true);
+        else if (t.tag == Tag.POINTER)
+             append(("@" + p.value + " = " + k + " " + t.type + "* null, align " + val.typeItem.align), true);   
+    }
+
+    globalVarList.clear();
+:}
+//global declaration + assignment
+| global_decl_keyword global_var_list type EQ global_ass_list {: 
+    globalVarCount = 0;
+    globalVarList.clear();
+:}
+| global_decl_keyword global_var_list EQ global_ass_list {: 
+    globalVarCount = 0;
+    globalVarList.clear();
+:}
+| global_decl_keyword error {: genSynWarning("Error in global declaration"); :}
+| global_decl_keyword global_var_list EQ error {: genSynWarning("Error in global assignment"); :};
+
+global_decl_keyword ::= VAR {: RESULT = "global"; :} | CONST {: RESULT = "constant"; :};
+
+global_var_list ::= global_var_list CM ID:name {:
+    globalVarList.add(new ValueObj(name));
+:} 
+| ID:name {:
+    globalVarList.add(new ValueObj(name));
+:}
+| error {: genSynWarning("Error in global declaration"); :};
+
+global_ass_list ::= global_ass_list CM empty global_ass_exp:x {: 
+    String keyword = (String) parser.stack(-1);
+
+    ValueObj p = globalVarList.get(globalVarCount);
+
+    ValueObj code = new ValueObj("@" + p.value, new TypeItem(Tag.BASE, x.typeItem.type, x.typeItem.align)); //assign type based on the assigned value
+
+    globalVarTable.put(p.value, code);
+    append(("@" + p.value + " = " + keyword + " " + x.typeItem.type + " " + x.value + ", align " + x.typeItem.align), true);
+    globalVarCount++;
+:}
+| global_ass_exp:x {:
+    String keyword = (String) parser.stack(-3);
+
+    ValueObj p = globalVarList.get(globalVarCount);
+
+    ValueObj code = new ValueObj("@" + p.value, new TypeItem(Tag.BASE, x.typeItem.type, x.typeItem.align)); //assign type based on the assigned value
+
+    globalVarTable.put(p.value, code);
+    append(("@" + p.value + " = " + keyword + " " + x.typeItem.type + " " + x.value + ", align " + x.typeItem.align), true);
+    globalVarCount++;   
+:};
+
+global_ass_exp ::= RO global_ass_exp:x RC {: RESULT = x; :}
+| INT:x {: RESULT = new ValueObj(String.valueOf(x), new TypeItem(Tag.IMMEDIATE, "i32", 4)); :}
+| DOUBLE:x {: RESULT = new ValueObj(String.valueOf(x), new TypeItem(Tag.IMMEDIATE, "double", 8)); :}
+| MINUS INT:x {: RESULT = new ValueObj(String.valueOf(-x), new TypeItem(Tag.IMMEDIATE, "i32", 4)); :}
+| MINUS DOUBLE:x {: RESULT = new ValueObj(String.valueOf(-x), new TypeItem(Tag.IMMEDIATE, "double", 8)); :}
+| global_ass_exp:x1 PLUS global_ass_exp:x2 {: 
+
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+            res = String.valueOf(Double.parseDouble(x1.value) + Double.parseDouble(x2.value));
+        else
+            res = String.valueOf(Integer.parseInt(x1.value) + Integer.parseInt(x2.value));
+        RESULT = new ValueObj(res, x1.typeItem); 
+:}
+| global_ass_exp:x1 MINUS global_ass_exp:x2 {: 
+
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+            res = String.valueOf(Double.parseDouble(x1.value) - Double.parseDouble(x2.value));
+        else
+            res = String.valueOf(Integer.parseInt(x1.value) - Integer.parseInt(x2.value));
+        RESULT = new ValueObj(res, x1.typeItem);      
+:}
+| global_ass_exp:x1 STAR global_ass_exp:x2 {: 
+
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+            res = String.valueOf(Double.parseDouble(x1.value) * Double.parseDouble(x2.value));
+        else
+            res = String.valueOf(Integer.parseInt(x1.value) * Integer.parseInt(x2.value));
+        RESULT = new ValueObj(res, x1.typeItem); 
+:}
+| global_ass_exp:x1 DIV global_ass_exp:x2 {:
+
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+            res = String.valueOf(Double.parseDouble(x1.value) / Double.parseDouble(x2.value));
+        else
+            res = String.valueOf(Integer.parseInt(x1.value) / Integer.parseInt(x2.value));
+        RESULT = new ValueObj(res, x1.typeItem); 
+:}
+| RO error RC {: genSynWarning("Error in expression"); :};
+
+empty ::= {: RESULT = (String) parser.stack(-4); :};
+
+/*******************/
+/**** FUNCTIONS ****/
+/*******************/
+
+func_list ::= func_list func | ;
+
+func ::= FUNC ID:name {:
+    currentFunc = new FuncObj(name);
+    SymbolTable funcSymbolTable = new SymbolTable(null);
+    currentFunc.currentSymbolTable = funcSymbolTable;
+:} RO param_list RC ret_type:ret BO {: 
+
+    parser.funcList.put(name, ret);
+
+    append(("define " + ret.type + " @" + name + "("), false);
+
+    FuncObj func = currentFunc; 
+
+    if (func.paramsList.size() > 0){
+        
+        for (int i = 0; i < func.paramsList.size(); i++){
+            TypeItem t = func.paramsList.get(i).typeItem;
+            if (t.tag == Tag.ARRAY)
+                t.tag = Tag.POINTER_ARRAY;
+
+            if (i == func.paramsList.size()-1){
+                if (t.tag == Tag.POINTER_ARRAY || t.tag == Tag.POINTER)
+                    append((t.type + "*"), false);
+                else
+                    append((t.type), false);
+            }else{
+                if (t.tag == Tag.POINTER_ARRAY || t.tag == Tag.POINTER)
+                    append((t.type + "*, "), false);
+                else
+                    append((t.type + ", "), false);
+            }
+        }  
+        
+        append((") {"), true); 
+
+        func.varCount = func.nargsTot + 1;
+
+        for (int i = 0; i < func.paramsList.size(); i++){
+            ValueObj p = func.paramsList.get(i);
+            ValueObj code = new ValueObj("%" + func.varCount, p.typeItem);
+            func.currentSymbolTable.varTable.put(p.value, code);
+            if (p.typeItem.tag == Tag.POINTER_ARRAY || p.typeItem.tag == Tag.POINTER){
+                append(("%" + func.varCount + " = alloca " + p.typeItem.type + "*, align " + code.typeItem.align), true);
+                append(("store " + p.typeItem.type + "* %" + i + ", " + p.typeItem.type + "** " + "%" + func.varCount + ", align " + code.typeItem.align), true);
+            }else{
+                append(("%" + func.varCount + " = alloca " + p.typeItem.type + ", align " + code.typeItem.align), true);
+                append(("store " + p.typeItem.type + " %" + i + ", " + p.typeItem.type + "* " + "%" + func.varCount + ", align " + code.typeItem.align), true);
+            }
+            func.varCount++;
+        }
+    }else{
+        append((") {"), true); 
+    }
+
+:} stmt_list BC {:
+    if (!currentFunc.ret && ret.type.equals("void"))
+        append(("ret void"), true); //add void return if function is void and there is not any return instruction
+    else if (!currentFunc.ret && !ret.type.equals("void"))
+        genSemError("Missing return statement in function '" + currentFunc.name + "'");
+    append(("}"), true);
+:}
+| FUNC error {: genSynWarning("Error in function definition"); :};
+
+param_list ::= param_list CM param | param;
+
+param ::= var_list:x type:t {:
+
+     FuncObj func = currentFunc;
+
+     int size = func.paramsList.size();
+     int tot = func.nargsTot;
+
+    for (int i = func.nargsTot; i<func.currentSymbolTable.nargs + tot; i++){
+        func.paramsList.get(i).setTypeItem(t);
+        func.nargsTot++;
+    }
+
+    func.currentSymbolTable.nargs = 0;
+
+:} | ;
+
+/*******************/
+/**** VARIABLES ****/
+/*******************/
+
+var_list ::= var_list CM ID:name {:
+    currentFunc.currentSymbolTable.nargs++;
+    currentFunc.paramsList.add(new ValueObj(name));
+:} | ID:name {:
+    currentFunc.currentSymbolTable.nargs++;
+    currentFunc.paramsList.add(new ValueObj(name));
+:};
+
+//simple var
+var ::= ID:name {: 
+    ValueObj val = checkVariable(name);
+
+    val.index = null;
+
+    RESULT = val;
+:}
+//array indexed by expression
+| ID:name SO exp:x SC {: 
+    ValueObj val = checkVariable(name);
+
+    if (val.typeItem.size != -1 && x.typeItem.tag == Tag.IMMEDIATE && Integer.valueOf(x.value) >= val.typeItem.size)
+        genSemError("Array index (" + x + ") out of bounds (size is " + val.typeItem.size + ")");
+
+    RESULT = new ValueObj(val.value, val.typeItem, x.value);
+:}
+//deferece pointer variable
+| STAR ID:name {:
+    ValueObj val = checkVariable(name);
+
+    val.index = null;
+
+    TypeItem t = new TypeItem(Tag.BASE, val.typeItem.type, val.typeItem.align);
+
+    append(("%" + currentFunc.varCount + " = load " + val.typeItem.type + "*, " + val.typeItem.type + "** " + val.value + ", align " + val.typeItem.align), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, t);
+    currentFunc.varCount++;
+:};
+
+/********************/
+/**** DATA TYPES ****/
+/********************/
+
+type ::= INT_TYPE {: RESULT = new TypeItem(Tag.BASE, "i32", 4); :}
+| FLOAT64_TYPE {: RESULT = new TypeItem(Tag.BASE, "double", 8); :}
+| SO INT:x SC type:t {: t.setTag(Tag.ARRAY); t.setSize(x); RESULT = t; :}
+| STAR type:t {: t.setTag(Tag.POINTER); RESULT = t; :};
+
+ret_type ::= INT_TYPE {: RESULT = new TypeItem(Tag.BASE, "i32", 4); :}
+| FLOAT64_TYPE {: RESULT = new TypeItem(Tag.BASE, "double", 8); :}
+//| SO INT:x SC type:t {: t.setTag(Tag.ARRAY); t.setSize(x); RESULT = t; :}
+| {: RESULT = new TypeItem(Tag.BASE, "void", 0); :};
+
+/**********************/
+/**** INSTRUCTIONS ****/
+/**********************/
+
+stmt_list ::= stmt_list stmt | 
+| error stmt {: genSynWarning("Error in statement"); :};
+
+stmt ::= if_block | for_loop | print | ret | declaration | assignment | func_call
+| BO {: 
+    SymbolTable s = new SymbolTable(currentFunc.currentSymbolTable);
+    currentFunc.currentSymbolTable = s; 
+:} stmt_list BC {:
+    currentFunc.currentSymbolTable = currentFunc.currentSymbolTable.prev; 
+:};
+
+//print instruction with only text
+print ::= PRINT RO STRING:value RC {: 
+    int label = genLabelString();
+
+    String s = value;
+    s = s.substring(1, s.length() - 1);
+    int length = s.length();
+    if (!s.contains("\\n"))
+    length++;
+    s = s.replace("\\n", "\\0A");
+    s = s + "\\00";
+
+    append(("%" + currentFunc.varCount + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + length + " x i8], [" + length + " x i8]* @.str." + label + ", i32 0, i32 0))"), true);
+    parser.stringList.add(value);
+
+    currentFunc.varCount++;
+:}
+//print instruction with parameters
+| PRINT RO STRING:value CM {: RESULT = new ArrayList<ValueObj>(); :} func_param_list:list RC {:
+    ArrayList<ValueObj> paramsList = (ArrayList<ValueObj>) list;
+    
+    int label = genLabelString();
+
+    String s = value;
+    s = s.substring(1, s.length() - 1);
+    int length = s.length();
+    if (!s.contains("\\n"))
+    length++;
+    s = s.replace("\\n", "\\0A");
+    s = s + "\\00";
+
+    append(("%" + currentFunc.varCount + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + length + " x i8], [" + length + " x i8]* @.str." + label + ", i32 0, i32 0), "), false);
+    for (int i = 0; i < paramsList.size(); i++){
+        ValueObj v = paramsList.get(i);
+        if (i == 0){
+            if (v.typeItem.tag == Tag.POINTER || v.typeItem.isPointer)
+                append((v.typeItem.type + "* " + v.value), false);
+            else
+                append((v.typeItem.type + " " + v.value), false);
+        }else{
+            if (v.typeItem.tag == Tag.POINTER || v.typeItem.isPointer)
+                append((", " + v.typeItem.type + "* " + v.value), false);
+            else
+                append((", " + v.typeItem.type + " " + v.value), false);
+        }
+    }
+    append((")"), true);
+
+    parser.stringList.add(value);
+
+    currentFunc.varCount++;
+:}
+| PRINT error {: genSynWarning("Error in 'print' expression"); :};
+
+//function call instruction with params list
+func_call ::= ID:name RO {:  RESULT = new ArrayList<ValueObj>(); :} func_param_list:list RC {:
+
+    TypeItem ret = parser.funcList.get(name);
+    if (ret == null){
+        genSemError("Function \"" + name + "\" is not declared");
+        ret = new TypeItem(Tag.BASE, "i32"); //generate fake value
+    }
+
+    ArrayList<ValueObj> paramsList = (ArrayList<ValueObj>) list;
+
+    if (ret.type.equals("void")){
+        append(("call " + ret.type + " @" + name + "("), false);
+    }else{
+        append(("%" + currentFunc.varCount + " = call " + ret.type + " @" + name + "("), false);
+        RESULT = new ValueObj("%" + currentFunc.varCount, ret); 
+        currentFunc.varCount++;
+    }
+   
+
+    for (int i = 0; i < paramsList.size(); i++){
+        ValueObj v = paramsList.get(i);
+
+        if (i == 0){
+            if (v.typeItem.tag == Tag.ARRAY || v.typeItem.tag == Tag.POINTER || v.typeItem.isPointer)
+                append((v.typeItem.type + "* " + v.value), false);
+            else
+                append((v.typeItem.type + " " + v.value), false);
+        }else{
+            if (v.typeItem.tag == Tag.ARRAY || v.typeItem.tag == Tag.POINTER || v.typeItem.isPointer)
+                append((", " + v.typeItem.type + "* " + v.value), false);
+            else
+                append((", " + v.typeItem.type + " " + v.value), false);
+        }
+    }
+    append((")"), true);
+:};
+
+func_param_list ::= func_param_list CM empty1 exp:x {:
+    ((ArrayList<ValueObj>) parser.stack(-1)).add(new ValueObj(x.value, x.typeItem));
+
+    RESULT = parser.stack(-1);
+:}
+| exp:x {:
+    ((ArrayList<ValueObj>) parser.stack(-1)).add(new ValueObj(x.value, x.typeItem));
+
+    RESULT = parser.stack(-1);
+:};
+
+empty1 ::= {: RESULT = parser.stack(-2); :};
+
+//return instruction
+ret ::= RET exp:x {: 
+    append(("ret " + x.typeItem.type + " " + x.value), true);
+    currentFunc.ret = true;
+
+    if (!x.typeItem.type.equals(funcList.get(currentFunc.name).type))
+        genSemError("Wrong return type: " + x.typeItem.type + " while expected is " + funcList.get(currentFunc.name).type);
+:} 
+| RET {:
+    append(("ret void"), true);
+    currentFunc.ret = true;
+
+    if (!funcList.get(currentFunc.name).type.equals("void"))
+        genSemError("Wrong return type: void while expected is " + funcList.get(currentFunc.name).type);
+:};
+
+//expressions
+exp ::= RO exp:x RC {: RESULT = x; :}
+| INT:x {: RESULT = new ValueObj(String.valueOf(x), new TypeItem(Tag.IMMEDIATE, "i32", 4)); :}
+| DOUBLE:x {: RESULT = new ValueObj(String.valueOf(x), new TypeItem(Tag.IMMEDIATE, "double", 8)); :}
+| MINUS INT:x {: RESULT = new ValueObj(String.valueOf(-x), new TypeItem(Tag.IMMEDIATE, "i32", 4)); :}
+| MINUS DOUBLE:x {: RESULT = new ValueObj(String.valueOf(-x), new TypeItem(Tag.IMMEDIATE, "double", 8)); :}
+| AND var:x {: 
+    TypeItem type = new TypeItem(x.typeItem.tag, x.typeItem.type, x.typeItem.size);
+    type.setPointer(true);
+    RESULT = new ValueObj(x.value, type); 
+:}
+| var:v {:
+    if (v.typeItem.tag == Tag.ARRAY){
+        if (v.index == null){
+            append(("%" + currentFunc.varCount + " = getelementptr inbounds [" + v.typeItem.size + " x " + v.typeItem.type + "], [" + v.typeItem.size + " x " + v.typeItem.type + "]* " + v.value + ", i32 0, i32 0"), true);
+            RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem); 
+        }else{
+            int index = currentFunc.varCount;
+            append(("%" + currentFunc.varCount + " = getelementptr inbounds [" + v.typeItem.size + " x " + v.typeItem.type + "], [" + v.typeItem.size + " x " + v.typeItem.type + "]* " + v.value + ", i32 0, i32 " + v.index), true);
+            currentFunc.varCount++;
+            append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+            RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem); 
+        }  
+    }else if (v.typeItem.tag == Tag.POINTER_ARRAY){
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + "*, " + v.typeItem.type + "** " + v.value + ", align " + v.typeItem.align), true);
+        int index = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", i32 " + v.index), true);
+        int index1 = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index1 + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem); 
+    }else if (v.typeItem.tag == Tag.POINTER){
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + "*, " + v.typeItem.type + "** " + v.value + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);
+    }else{
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* " + v.value + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);
+    }
+    currentFunc.varCount++;
+:}
+| func_call:x {:
+    RESULT = (ValueObj) x;
+:}
+/* Arithmetic expressions */
+| exp:x1 PLUS exp:x2 {: 
+
+    if (x1.typeItem.tag == Tag.IMMEDIATE && x2.typeItem.tag == Tag.IMMEDIATE){
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+            res = String.valueOf(Double.parseDouble(x1.value) + Double.parseDouble(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem.equals("double") ? x1.typeItem : x2.typeItem); 
+        }else{
+            res = String.valueOf(Integer.parseInt(x1.value) + Integer.parseInt(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem); 
+        }
+
+    }else{
+        CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+        TypeItem typeItem = x1.typeItem;
+
+        if (x2.typeItem.type.equals("double"))
+            typeItem = x2.typeItem;
+
+        if (typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fadd " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+        else
+            append(("%" + currentFunc.varCount + " = add nsw " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+
+        //RESULT = new ValueObj("%" + currentFunc.varCount, (x1.typeItem.tag == Tag.IMMEDIATE) ? x2.typeItem : x1.typeItem); 
+        RESULT = new ValueObj("%" + currentFunc.varCount, typeItem); 
+        currentFunc.varCount++;
+    }
+:}
+| exp:x1 MINUS exp:x2 {: 
+    if (x1.typeItem.tag == Tag.IMMEDIATE && x2.typeItem.tag == Tag.IMMEDIATE){
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+            res = String.valueOf(Double.parseDouble(x1.value) - Double.parseDouble(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem.equals("double") ? x1.typeItem : x2.typeItem); 
+        }else{
+            res = String.valueOf(Integer.parseInt(x1.value) - Integer.parseInt(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem); 
+        }
+
+    }else{
+        CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+        TypeItem typeItem = x1.typeItem;
+
+        if (typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fsub " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+        else
+            append(("%" + currentFunc.varCount + " = sub nsw " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+
+        //RESULT = new ValueObj("%" + currentFunc.varCount, (x1.typeItem.tag == Tag.IMMEDIATE) ? x2.typeItem : x1.typeItem); 
+        RESULT = new ValueObj("%" + currentFunc.varCount, typeItem); 
+        currentFunc.varCount++;
+    }      
+:}
+| exp:x1 STAR exp:x2 {: 
+
+    if (x1.typeItem.tag == Tag.IMMEDIATE && x2.typeItem.tag == Tag.IMMEDIATE){
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+            res = String.valueOf(Double.parseDouble(x1.value) * Double.parseDouble(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem.equals("double") ? x1.typeItem : x2.typeItem); 
+        }else{
+            res = String.valueOf(Integer.parseInt(x1.value) * Integer.parseInt(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem); 
+        }
+
+    }else{
+        CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+        TypeItem typeItem = x1.typeItem;
+
+        if (typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fmul " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+        else
+            append(("%" + currentFunc.varCount + " = mul nsw " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+
+        //RESULT = new ValueObj("%" + currentFunc.varCount, (x1.typeItem.tag == Tag.IMMEDIATE) ? x2.typeItem : x1.typeItem); 
+        RESULT = new ValueObj("%" + currentFunc.varCount, typeItem); 
+        currentFunc.varCount++;
+    } 
+:}
+| exp:x1 DIV exp:x2 {:
+
+    if (x1.typeItem.tag == Tag.IMMEDIATE && x2.typeItem.tag == Tag.IMMEDIATE){
+        String res = "";
+        if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+            res = String.valueOf(Double.parseDouble(x1.value) / Double.parseDouble(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem.equals("double") ? x1.typeItem : x2.typeItem); 
+        }else{
+            res = String.valueOf(Integer.parseInt(x1.value) / Integer.parseInt(x2.value));
+            RESULT = new ValueObj(res, x1.typeItem); 
+        }
+    }else{
+        CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+        TypeItem typeItem = x1.typeItem;
+
+        if (typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fdiv " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+        else
+            append(("%" + currentFunc.varCount + " = sdiv " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+
+        //RESULT = new ValueObj("%" + currentFunc.varCount, (x1.typeItem.tag == Tag.IMMEDIATE) ? x2.typeItem : x1.typeItem); 
+        RESULT = new ValueObj("%" + currentFunc.varCount, typeItem); 
+        currentFunc.varCount++;
+    }
+:}
+/* Logical expressions */
+| exp:x1 AND exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+        genSemWarning("AND operation supports only integer operands");
+
+    append(("%" + currentFunc.varCount + " = and " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 OR exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+        genSemWarning("OR operation supports only integer operands");
+    
+    append(("%" + currentFunc.varCount + " = or " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 XOR exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double"))
+        genSemWarning("XOR operation supports only integer operands");
+
+    append(("%" + currentFunc.varCount + " = xor " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+/* Comparison expressions */
+| exp:x1 EQ EQ exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "eq";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "oeq";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 NOT EQ exp:x2 {: 
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "ne";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "une";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 MIN exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "slt";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "olt";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 MAJ exp:x2 {: 
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "sgt";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "ogt";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 MIN_EQ exp:x2 {: 
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "sle";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "ole";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| exp:x1 MAJ_EQ exp:x2 {:
+    CheckTypeOperation(x1.typeItem, x2.typeItem);
+
+    String compType = "icmp";
+    String compExp = "sge";
+    if (x1.typeItem.type.equals("double") || x2.typeItem.type.equals("double")){
+        compType = "fcmp";
+        compExp = "oge";
+    }
+
+    append(("%" + currentFunc.varCount + " = " + compType + " " + compExp + " " + x1.typeItem.type + " " + x1.value + ", " + x2.value), true);
+    RESULT = new ValueObj("%" + currentFunc.varCount, x1.typeItem); 
+    currentFunc.varCount++;
+:}
+| RO error RC {: genSynWarning("Error in expression"); :};
+
+var_stmt_list ::= var_stmt_list CM ID:name {:
+    currentFunc.currentSymbolTable.varList.add(new ValueObj(name));
+:} | ID:name {:
+    currentFunc.currentSymbolTable.varList.add(new ValueObj(name));
+:};
+
+//assignment instruction
+assignment ::= var:val EQ exp:x {: 
+    CheckTypeAssignment(val.typeItem, x.typeItem);
+
+    if (val.typeItem.tag == Tag.ARRAY){
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds [" + val.typeItem.size + " x " + val.typeItem.type + "], [" + val.typeItem.size + " x " + val.typeItem.type + "]* " + val.value + ", i32 0, i32 " + val.index), true);
+        append(("store " + x.typeItem.type + " " + x.value + ", " + val.typeItem.type + "* %" + currentFunc.varCount + ", align " + val.typeItem.align), true);
+        currentFunc.varCount++;
+    }else if (val.typeItem.tag == Tag.POINTER_ARRAY){
+        append(("%" + currentFunc.varCount + " = load " + val.typeItem.type + "*, " + val.typeItem.type + "** " + val.value + ", align " + val.typeItem.align), true);
+        int index = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds " + val.typeItem.type + ", " + val.typeItem.type + "* %" + index + ", i32 " + val.index), true);
+        append(("store " + x.typeItem.type + " " + x.value + ", " + val.typeItem.type + "* %" + currentFunc.varCount + ", align " + val.typeItem.align), true);
+        currentFunc.varCount++;
+    }else if(val.typeItem.tag == Tag.POINTER){
+        append(("store " + x.typeItem.type + "* " + x.value + ", " + val.typeItem.type + "** " + val.value + ", align " + val.typeItem.align), true);  
+    }else{
+        append(("store " + x.typeItem.type + " " + x.value + ", " + val.typeItem.type + "* " + val.value + ", align " + val.typeItem.align), true);  
+    }
+:}
+//post increment instruction
+| var:v PLUS PLUS {:
+    if (v.typeItem.tag == Tag.ARRAY){
+        int index = currentFunc.varCount;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds [" + v.typeItem.size + " x " + v.typeItem.type + "], [" + v.typeItem.size + " x " + v.typeItem.type + "]* " + v.value + ", i32 0, i32 " + v.index), true);
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fadd " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = add nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);        
+        append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);  
+        currentFunc.varCount++;
+    }else if (v.typeItem.tag == Tag.POINTER_ARRAY){
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + "*, " + v.typeItem.type + "** " + v.value + ", align " + v.typeItem.align), true);
+        int index = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", i32 " + v.index), true);
+        int index1 = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index1 + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fadd " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = add nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);
+            append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);    
+    }else{
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* " + v.value + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fadd " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = add nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);
+            append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* " + v.value + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);  
+        currentFunc.varCount++;
+    }   
+:}
+//post decrement instruction
+| var:v MINUS MINUS {:
+    if (v.typeItem.tag == Tag.ARRAY){
+        int index = currentFunc.varCount;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds [" + v.typeItem.size + " x " + v.typeItem.type + "], [" + v.typeItem.size + " x " + v.typeItem.type + "]* " + v.value + ", i32 0, i32 " + v.index), true);
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fsub " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = sub nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);
+        append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);  
+        currentFunc.varCount++;
+    }else if (v.typeItem.tag == Tag.POINTER_ARRAY){
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + "*, " + v.typeItem.type + "** " + v.value + ", align " + v.typeItem.align), true);
+        int index = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = getelementptr inbounds " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index + ", i32 " + v.index), true);
+        int index1 = currentFunc.varCount;
+        currentFunc.varCount++;
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* %" + index1 + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fsub " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = sub nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);
+        append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* %" + index + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);    
+    }else{
+        append(("%" + currentFunc.varCount + " = load " + v.typeItem.type + ", " + v.typeItem.type + "* " + v.value + ", align " + v.typeItem.align), true);
+        currentFunc.varCount++;
+        if (v.typeItem.type.equals("double"))
+            append(("%" + currentFunc.varCount + " = fsub " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1.0"), true);
+        else
+            append(("%" + currentFunc.varCount + " = sub nsw " + v.typeItem.type + " %" + (currentFunc.varCount-1) + ", 1"), true);
+        append(("store " + v.typeItem.type + " %" + currentFunc.varCount + ", " + v.typeItem.type + "* " + v.value + ", align " + v.typeItem.align), true);
+        RESULT = new ValueObj("%" + currentFunc.varCount, v.typeItem);  
+        currentFunc.varCount++;
+    }
+:}
+| var EQ error {: genSynWarning("Error in expression"); :};
+
+/***************************/
+/**** LOCAL DECLARATION ****/
+/***************************/
+
+//declaration only
+declaration ::= VAR var_stmt_list type:t {:
+
+    for (int i = 0; i < currentFunc.currentSymbolTable.varList.size(); i++){
+        ValueObj p = currentFunc.currentSymbolTable.varList.get(i);
+        ValueObj code = new ValueObj("%" + currentFunc.varCount, t);
+        currentFunc.currentSymbolTable.varTable.put(p.value, code);
+        if (t.tag == Tag.BASE)
+            append(("%" + currentFunc.varCount + " = alloca " + t.type + ", align " + code.typeItem.align), true);
+        else if (t.tag == Tag.ARRAY)
+            append(("%" + currentFunc.varCount + " = alloca [" + t.size + " x " + t.type + "], align " + code.typeItem.align), true);
+        else if (t.tag == Tag.POINTER)
+            append(("%" + currentFunc.varCount + " = alloca " + t.type + "*, align " + code.typeItem.align), true);
+
+        currentFunc.varCount++;
+    }
+    currentFunc.currentSymbolTable.varList.clear();
+:}
+//declaration + assignment
+| VAR var_stmt_list type:t {: 
+    for (int i = 0; i<currentFunc.currentSymbolTable.varList.size(); i++)
+        currentFunc.currentSymbolTable.varList.get(i).setTypeItem(t);
+:} EQ ass_list {:
+    currentFunc.currentSymbolTable.nargs = 0;
+    currentFunc.currentSymbolTable.varList.clear();
+:}
+| VAR var_stmt_list EQ ass_list {: 
+    currentFunc.currentSymbolTable.nargs = 0;
+    currentFunc.currentSymbolTable.varList.clear(); 
+:}
+| short_declaration
+| VAR error {: genSynWarning("Error in declaration"); :}
+| VAR var_stmt_list EQ {: System.out.println("Error in assignment"); :}; 
+
+//short variable declaration
+short_declaration ::= var_stmt_list COL EQ ass_list {: currentFunc.currentSymbolTable.nargs = 0; currentFunc.currentSymbolTable.varList.clear(); :}
+| var_stmt_list COL EQ error {: genSynWarning("Error in short assignment"); :};
+
+ass_list ::= ass_list CM ass_exp | ass_exp;
+
+ass_exp ::= exp:x {:
+    ValueObj p = currentFunc.currentSymbolTable.varList.get(currentFunc.currentSymbolTable.nargs);
+    ValueObj code;
+
+    if (p.typeItem != null){
+        code = new ValueObj("%" + currentFunc.varCount, p.typeItem);
+        CheckTypeAssignment(p.typeItem, x.typeItem);
+    }else{
+        code = new ValueObj("%" + currentFunc.varCount, new TypeItem(Tag.BASE, x.typeItem.type, x.typeItem.align));
+    }
+    currentFunc.currentSymbolTable.varTable.put(p.value, code);
+    append((code.value + " = alloca " + x.typeItem.type + ", align " + code.typeItem.align), true);
+    append(("store " + x.typeItem.type + " " + x.value + ", " + code.typeItem.type + "* " + code.value + ", align " + code.typeItem.align), true);
+    currentFunc.varCount++;
+    currentFunc.currentSymbolTable.nargs++;
+:};
+
+/***********************************/
+/**** FLOW CONTROL INSTRUCTIONS ****/
+/***********************************/
+
+//for instruction
+for_loop ::= FOR init_statement {:
+    loopCount = ++totLoopCount;
+
+    append(("br label %for.cond." + loopCount), true);
+:} S {:
+    append(("for.cond." + loopCount + ":"), true);
+:} condition:x {:
+    append(("br i1 " + x.value + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+:} S {:
+    append(("for.inc." + loopCount + ":"), true);
+:} assignment {:
+    append(("br label %for.cond." + loopCount), true);
+    append(("for.body." + loopCount + ":"), true);
+:} stmt {:
+    append(("br label %for.inc." + loopCount), true);
+    append(("for.exit." + loopCount + ":"), true);
+
+    loopCount--;
+:}
+//while instruction
+| FOR S {:
+    loopCount = ++totLoopCount;
+    append(("br label %for.cond." + loopCount), true);
+    append(("for.cond." + loopCount + ":"), true);
+:} condition:x {:
+    append(("br i1 " + x.value + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+:} S {:
+    append(("for.body." + loopCount + ":"), true);
+:} stmt {:
+    append(("br label %for.cond." + loopCount), true);
+    append(("for.exit." + loopCount + ":"), true);
+
+    loopCount--;
+:}
+//infinite loop instruction
+| FOR {: 
+    loopCount = ++totLoopCount;
+    append(("br label %for.cond." + loopCount), true);
+    append(("for.cond." + loopCount + ":"), true);
+:} stmt {:
+    append(("br label %for.cond." + loopCount), true);
+    append(("for.exit." + loopCount + ":"), true);
+    loopCount--; 
+:} 
+| FOR error {: genSynWarning("Error in 'for' instruction"); :};
+
+//if instruction
+if_block ::= IF {: 
+    loopCount = ++totLoopCount; 
+:} condition:x {:
+    append(("br i1 " + x.value + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
+    append(("if.body." + loopCount + ":"), true);
+:} stmt else_block
+| IF error {: genSynWarning("Error in 'if' instruction"); :};
+
+else_block ::= {: 
+    append(("br label %if.exit." + loopCount), true);
+:} ELSE {: 
+    append(("if.else." + loopCount + ":"), true); 
+:} stmt {:
+    append(("br label %if.exit." + loopCount), true);
+    append(("if.exit." + loopCount + ":"), true);
+
+    loopCount--;
+:}
+| {:
+    append(("br label %if.else." + loopCount), true);
+    append(("if.else." + loopCount + ":"), true);
+
+    loopCount--;
+:};
+
+init_statement ::= short_declaration | assignment;
+
+condition ::= exp:x {: RESULT = x; :};

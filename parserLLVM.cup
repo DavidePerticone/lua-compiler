@@ -1,0 +1,170 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map.*;
+import java.util.ArrayList;
+import java.util.regex.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+
+init with {:
+
+    globalVarList = new ArrayList<ValueType>();
+    globalSymbolTable  = new HashMap<String, ValueType>();
+  
+:};
+
+parser code {:
+
+    public HashMap <String, ValueType> globalSymbolTable;
+    public ArrayList<ValueType> globalVarList;
+
+    public class ValueType{
+
+        String value;
+        Double num;
+
+        public ValueType(String value){
+            this.value = value;
+        }
+
+        public ValueType(Double num){
+            this.num = num;
+        }
+
+          public String toString() {
+        return String.format(value + " "+ num);
+    }
+
+    }
+
+
+
+
+:};
+
+
+
+//Terminal tokens
+terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, XOR, NOT, SO, SC, EQ, NOTEQ;
+terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
+terminal DO, FOR, IF, ELSE, ELSEIF, END, LOCAL, STRING;
+terminal Double NUMBER;
+terminal String ID;
+
+
+//Non terminal tokens
+non terminal  global_decl, local_var, block, array_dec;
+non terminal  local_var_init, local_var_list, var_stmt_list;
+non terminal Double ass_exp;
+non terminal Double exp;
+non terminal ArrayList<Double> ass_list;
+
+//Precedences
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+precedence left MIN, MAJ, MIN_EQ, MAJ_EQ, EQ, NOTEQ;
+precedence left PLUS, MINUS;
+precedence left STAR, DIV;
+precedence left NOT, UMIN;
+precedence right HAT;
+
+/***********************/
+/**** GRAMMAR START ****/
+/***********************/
+start with global_decl;
+
+
+/*****************************/
+/**** GLOBAL DECLARATIONS ****/
+/*****************************/
+
+
+
+
+/**********************/
+/**** INSTRUCTIONS ****/
+/**********************/
+
+
+/* expressions: 
+    Arithmetic
+    Logical
+    Relational
+    Concatenation ---TODO
+*/
+
+exp ::= RO exp:x RC 
+| NUMBER:x {: RESULT = x;  :}
+| MINUS NUMBER %prec UMIN
+/* Arithmetic expressions */
+| exp  PLUS exp  
+| exp  MINUS exp  
+| exp  STAR exp  
+| exp  DIV exp  
+| exp HAT exp
+/* Logical expressions */
+| exp  AND exp 
+| exp  OR exp  
+| NOT exp
+/* Relational expressions */
+| exp  EQ EQ exp  
+| exp  NOTEQ exp  
+| exp  MIN exp  
+| exp  MAJ exp  
+| exp  MIN_EQ exp  
+| exp  MAJ_EQ exp  
+| RO error RC 
+;
+
+
+
+
+
+//local declaration
+local_var_list ::= LOCAL var_stmt_list | LOCAL var_stmt_list EQ ass_list;
+local_var_init ::= local_var_list EQ ass_list;
+
+
+//global declaration and initialization
+global_decl ::= var_stmt_list EQ ass_list:y {:
+y.forEach(x -> System.out.println(x.toString()));
+
+globalVarList.forEach( x -> globalSymbolTable.put(x.value, new ValueType(y.get(0))));
+globalVarList.forEach( x -> System.out.println(x.toString()));
+:};
+
+//Variable list like a, b, c, d
+var_stmt_list ::= var_stmt_list CM ID:x {:
+
+globalVarList.add(new ValueType(x));
+
+:}| ID:x {:
+
+//Putting the new variable in the temporary list
+globalVarList.add(new ValueType(x));
+
+:} ;
+
+//Expression list like 2*2, 2, 4, 2^2
+ass_list ::= ass_list:x CM ass_exp:value {: x.add(value); 
+                                            RESULT = x; :}
+            | ass_exp:value {: RESULT = new ArrayList<Double>();
+                        System.out.println(value);
+                        RESULT.add(value);
+            
+                    :};
+ass_exp ::= exp:x {: RESULT = x; :};
+//ass_exp ::= exp | array_dec;
+
+//block do-end
+
+block ::= DO global_decl END;
+
+//1-D table
+
+array_dec ::= BO ass_list BC | BO BC;
+
+
