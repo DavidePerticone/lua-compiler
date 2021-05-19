@@ -47,13 +47,14 @@ nl = \r|\n|\r\n|" "
 
 "in"    {return symbol(sym.IN);}
 
-"nil"    {return symbol(sym.NIL);}
+
 
 
 
 
 
 */
+"nil"    {return symbol(sym.NIL);}
 "print"     {return symbol(sym.PRINT);}
 "return"    {return symbol(sym.RETURN);}
 "function"    {return symbol(sym.FUNCTION);}

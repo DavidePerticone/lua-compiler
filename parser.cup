@@ -15,14 +15,14 @@ import java.io.FileWriter;
 terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, XOR, NOT, SO, SC, EQ, NOTEQ;
 terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
 terminal DO, FOR, IF, ELSE, THEN, ELSEIF, END, LOCAL;
-terminal NUMBER, ID, STRING;
+terminal NUMBER, ID, STRING, NIL;
 terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
 //Non terminal tokens
 non terminal exp, global_var_init, local_var, block, array_dec;
 non terminal  local_var_init, local_var_list, var_list, ass_list, ass_exp;
 non terminal for_loop, stmt_list, stmt, loop_cond, assignment, var;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
-non terminal function_decl_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
+non terminal print_func_args, function_decl_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
 //Precedences
 precedence left OR;
 precedence left AND;
@@ -57,7 +57,7 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment;
 
 stmt_list ::= stmt_list stmt | stmt ;
 
-stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop |  repeat_loop | block;
+stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block;
 
 
 /* expressions: 
@@ -71,6 +71,8 @@ exp ::= RO exp:x RC
 | NUMBER 
 | MINUS NUMBER %prec UMIN
 | var
+| NIL
+| func_call
 /* Arithmetic expressions */
 | exp  PLUS exp  
 | exp  MINUS exp  
@@ -118,7 +120,7 @@ assignment ::= var EQ ass_exp;
 /*******************/
 
 //Variable list like a, b, c, d
-var_list ::= var_list CM ID | ID 
+var_list ::= var_list CM var | var 
  ;
 
 //simple var
@@ -145,18 +147,18 @@ for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END
 
 //while loop        
 
-while_loop ::= WHILE RO loop_cond RC DO stmt_list END;
+while_loop ::= WHILE  loop_cond  DO stmt_list END;
 
 
 //repeat-until loop
 
-repeat_loop ::= REPEAT stmt_list UNTIL RO loop_cond RC; 
+repeat_loop ::= REPEAT stmt_list UNTIL loop_cond ; 
 
 
 
 //if instruction
 
-if_block ::= IF RO exp RC THEN  stmt_list  else_block END;
+if_block ::= IF  exp  THEN  stmt_list  else_block END;
 
 else_block ::= ELSE stmt_list | ;
 
@@ -167,19 +169,22 @@ else_block ::= ELSE stmt_list | ;
 
 
 
-function_decl ::= FUNCTION ID RO func_param_list RC stmt_list ret END;
+function_decl ::= FUNCTION ID RO func_param_list RC stmt_list END;
 
 
-ret ::= RETURN exp
-        | RETURN;
+ret ::= RETURN exp;
+        //| RETURN;
 
 
-print_func ::= PRINT RO STRING RC 
-                | PRINT RO STRING CM func_param_list RC
-                | PRINT RO STRING CM func_call RC;
+print_func ::= PRINT RO print_func_args RC ;
+                
+                
+
+
+print_func_args ::= print_func_args CM STRING | print_func_args CM exp |  STRING | exp ;
 
 func_param_list ::= func_param_list CM exp 
-                    | exp     ;
+                    | exp   ;
 
 
 func_call ::= ID:name RO  func_param_list RC;
