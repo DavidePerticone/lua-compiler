@@ -1,37 +1,6 @@
-
-
-function swap(a, b, table)
-
-    if table[a] == nil or table[b] == nil then
-        return 0
-    end
-
-    if table[a] > table[b] then
-        table[a], table[b] = table[b], table[a]
-        return 1
-    end
-
-    return 0
-
-end
-
-
-function bubblesort(array, size)
-
-    for i=1, size, 1  do
-
-        local ci = i
-        
-        while swap(ci, ci+1, array) do
-            ci = ci - 1
-           
-        end
-    end
-end
-
-
-bubblesort(array)
-
-
-
-    
+a=-3
+b=-5
+a=2
+b=a
+c=5
+c=a
