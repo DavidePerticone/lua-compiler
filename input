@@ -1,2 +1,16 @@
-b=5
-a=a+b
+function prova(a, b)
+
+    if a==2 then
+    local b=2;
+    return 2
+    end
+a=2 
+return a*a
+end
+
+a=2
+if a then
+local c=5
+end
+
+b=c

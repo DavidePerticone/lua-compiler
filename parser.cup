@@ -19,7 +19,7 @@ import java.io.FileWriter;
 import java.util.LinkedList;
 
 init with {:
-   currentSymTable = new parser.SymbolTable(null); //Main symbol table for global variables included in all scopes
+   currentSymTable = globalSymbolTable = new parser.SymbolTable(null, false); //Main symbol table for global variables included in all scopes
    funcBuffer = new StringBuffer(); //buffer for function declaration
    globalDecBuffer = new StringBuffer(); //buffer for global var declaration
    mainBuffer = new StringBuffer(); //buffer used for main function
@@ -42,7 +42,7 @@ init with {:
 
 
 parser code {:
-    
+public SymbolTable globalSymbolTable;
 public SymbolTable currentSymTable;
 public StringBuffer funcBuffer;
 public StringBuffer globalDecBuffer;
@@ -65,15 +65,29 @@ public class SymbolTable{
         public Integer registerCount; //used as counter for SSA registers
         SymbolTable prev;
         StringBuffer currentBuffer;
+
+        public SymbolTable getPrev(boolean insideSameFunction){
+            if(insideSameFunction){
+                prev.registerCount=registerCount;
+                return prev;
+            }else{
+                return prev;
+            }
+        }
         
         
-        public SymbolTable(SymbolTable p){
+        public SymbolTable(SymbolTable p, boolean isFunction){ //isFunction is needed to distinguish closure from functions
             this.varTable = new HashMap<String, ValueObj>();
             this.varList = new ArrayList<ValueObj>();
             this.expList = new ArrayList<ValueObj>();
             this.nargs = 0;
             this.prev = p;
-            registerCount=1;
+            this.registerCount = p==null ? 1 : p.registerCount; //if it the main table, start reg from 1
+            currentBuffer =  p==null ? currentBuffer : p.currentBuffer; //set buffer main buffer
+            if(isFunction){
+                registerCount=1; //if it is a funct, restart from 1
+                currentBuffer=funcBuffer; //as it is a func, use func buffer
+            }
         }
 
         public ValueObj get(String s){
@@ -93,6 +107,7 @@ public class ValueObj {
         public String name;
         public Type type;
         public String scope;
+        Integer nElement; //for arrrays
 
 		public ValueObj(String name) {
 			super();
@@ -125,12 +140,34 @@ public class ValueObj {
             this.type=Type.BOOL;
         }
 
+        public boolean isLocal(){
+            return scope.compareTo("%")==0;
+        }
         
   
  
     }
 
    
+
+public class FuncObj {
+
+        public String name;
+        public int nargsTot;
+        public ArrayList<ValueObj> paramsList;
+        public int varCount;
+        public boolean ret;
+      
+
+        public FuncObj(String name){
+            this.name = name;
+            this.paramsList = new ArrayList<>();
+            this.varCount = 1;
+            this.nargsTot = 0;
+            this.ret = false;
+           
+        }
+    }
 
 
 :};
@@ -231,16 +268,73 @@ action code {:
 
     }
 
+    public ValueObj initLocalVar(ValueObj n, ValueObj x){
+
+                        String op1, op2;
+                        //%1 = alloca i32, align 4
+                        if(x.type == Type.IMMEDIATE){
+                            op2=""+x.value;
+                            if(n.type == null){
+                            n.setDouble(); //set type number in the variable
+                            n.setLocal();
+                            n.name=getRegister(); //assign to local var a new register
+                            appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //append to the main declaration buffer
+                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                            
+                            }else if(n.type == Type.NUMBER){
+                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                        }
+                        }else if(x.type == Type.NUMBER){
+                            op2=x.scope+x.name;
+                            if(n.type == null){
+                                n.setDouble(); //set type number in the variable
+                                n.setLocal();
+                                n.name=getRegister(); //assign to local var a new register
+                                appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //allocate new varappend to the main declaration buffer
+
+                                String reg = getRegister(); //get a new register
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", op2,"8"), true); //save the value of the var into the register
+                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
+                            }else if(n.type == Type.NUMBER){
+                                String reg = getRegister();
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
+                                appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
+
+                            }
+                        }else if(x.type == Type.RNUM){
+                            op2="%"+x.name;
+                            if(n.type == null){
+                                n.setDouble(); //set type number in the variable
+                                n.setLocal();
+                                n.name=getRegister(); //assign to local var a new register
+                                appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //allocate new varappend to the main declaration buffer
+                                appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true); 
+                            }else if(n.type == Type.NUMBER){
+                            appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true);
+                            }
+                        }
+
+                        return n;
+
+    }
+
      public ValueObj initVar(ValueObj n, ValueObj x){
 
                         String op1, op2;
+
+                        if(n.scope != null && n.isLocal()){
+                            return initLocalVar(n, x);
+                        }
 
                         if(x.type == Type.IMMEDIATE){
                             op2=""+x.value;
                             if(n.type == null){
                             n.setDouble(); //set type number in the variable
                             n.setGlobal();
+                            System.out.println("VarInit "+ n.type + n.name);
                             appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+op2), true); //append to the Global declaration buffer
+                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                            
                             }else if(n.type == Type.NUMBER){
                             appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
                         }
@@ -363,7 +457,7 @@ action code {:
                             String op1=null, op2=null;
 
 
-                             if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
+                            if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
                                 ///create switch
                                 if(operation.compareTo("fadd")==0)
                                     RESULT=new ValueObj(x.value+y.value);
@@ -373,7 +467,10 @@ action code {:
                                     RESULT=new ValueObj(x.value*y.value);
                                 else if(operation.compareTo("fdiv")==0)
                                     RESULT=new ValueObj(x.value/y.value);
-                                RESULT.type=Type.IMMEDIATE; //the returning value is itself and integer
+                                else if(operation.compareTo("pow")==0 )
+                                    RESULT=new ValueObj(Math.pow(x.value, y.value));
+                                
+                                RESULT.type=Type.IMMEDIATE; //the returning value is itself a double
                             }else{
 
                                 if (x.type==Type.NUMBER){
@@ -418,12 +515,17 @@ action code {:
                         //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
                         appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8" ),true); //load it
                         op1="%"+reg; //save register where it is loaded
+                    }else if(x.type == Type.RNUM){
+                        op1=x.scope+x.name;
+                        
                     }if(y.type == Type.IMMEDIATE){ //same as first operand
                         op2=""+y.value;
                     }else if(y.type == Type.NUMBER){
                         String reg=getRegister();
                          appendMainBuffer(loadLLVM("%"+reg, "double", "double", y.scope+y.name, "8" ), true);
                         op2="%"+reg;
+                    }else if(y.type == Type.RNUM){
+                        op2=y.scope+y.name;
                     }
                     String result = getRegister(); //get register for output
                     appendMainBuffer("%"+result + " = fcmp "+ operation +" double " + op1 +", " + op2, true); //calculate result
@@ -436,7 +538,7 @@ action code {:
     }   
 
      public int genLabelString(){
-    return indexString++;
+        return indexString++;
     }
 
     private void printStrings(){
@@ -473,13 +575,14 @@ terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
 terminal String ID, STRING;
 terminal Double NUMBER;
 //Non terminal tokens
-non terminal global_var_init, local_var, block, array_dec;
+non terminal global_var_init, local_var, block, array_declaration;
 non terminal  local_var_init, local_var_list, var_list, ass_list;
 non terminal for_loop, stmt_list, stmt;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
-non terminal print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
+non terminal func_decl_param, print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, func_call, declaration;
 non terminal ValueObj var;
 non terminal ValueObj ass_exp, loop_cond, exp, assignment;
+non terminal ArrayList<ValueObj> func_param_list;
 
 //Precedences
 precedence left OR;
@@ -500,12 +603,13 @@ start with prog;
 prog ::= func_list {:
         
        
-       bwr.write(funcBuffer.toString());
+       
 
 :}  stmt_list  {:
         printStrings();
-       bwr.write(stringDecl.toString());
-		 bwr.write(globalDecBuffer.toString());
+       bwr.write(stringDecl.toString()+"\n");
+		 bwr.write(globalDecBuffer.toString()+"\n");
+         bwr.write(funcBuffer.toString()+"\n");
 	    bwr.write("define void @main(){\n");
         bwr.write(mainBuffer.toString());
 	
@@ -525,7 +629,7 @@ prog ::= func_list {:
 /**** DECLARATIONS ****/
 /*****************************/
 
-declaration ::= local_var_init | local_var_list | global_var_init | assignment;
+declaration ::= local_var_init | local_var_list | global_var_init | assignment | array_declaration;
 
 
 /**********************/
@@ -554,22 +658,43 @@ exp ::= RO exp:x RC {: RESULT = x; :}
 | MINUS NUMBER:x  {:    RESULT=new ValueObj(-x);   :} %prec UMIN
 | var:x {:   
              ValueObj tmp = currentSymTable.get(x.name);
-            if(tmp == null){
+             
+            if(tmp == null && x.nElement == null){ //if it is not declared and it is not an array cell
                 System.out.println("ERRORE VARIABLE NOT DECLARED");
-            }  
-            RESULT=tmp;  :}
-| NIL
+            }
+            if (x.nElement != null){
+                RESULT=x;
+            }else{
+                RESULT=tmp;}  :}
+| NIL {:                String reg=getRegister();
+                        RESULT= new ValueObj(reg); 
+                        RESULT.setBool();
+                        RESULT.setLocal();
+                      
+                        appendMainBuffer("%"+reg + " = icmp "+ "eq" +" i32 0" +", " + "1", true); //calculate result
+
+                              :}
 | func_call
 /* Arithmetic expressions */
 | exp:x  PLUS exp:y  {:  RESULT=operation("fadd", x, y); :}
 | exp:x  MINUS exp:y  {: RESULT=operation("fsub", x, y);  :}
 | exp:x  STAR exp:y   {: RESULT=operation("fmul", x, y);  :}
 | exp:x  DIV exp:y   {: RESULT=operation("fdiv", x, y);  :}
-| exp:x HAT exp:y
+| exp:x HAT exp:y   {: RESULT=operation("pow", x, y);  :}
 /* Logical expressions */
-| exp:x  AND exp:y {:                         
+| exp:x  AND exp:y {:     
+
                     String r = getRegister();
-                    appendMainBuffer("%"+r+ " = and" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                    if(x.type == Type.BOOL && y.type == Type.BOOL){ //if both are bool, just compare them
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                    }else if(x.type != Type.BOOL && y.type != Type.BOOL){ //if both are not bool, the result is 1 (all values are true except false and nil)
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + "1"+", "+ "1", true );
+                    }else if(x.type == Type.BOOL && y.type != Type.BOOL ){ //if 1 is bool and one not, the bool is the result
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + x.scope+x.name+", "+ x.scope+x.name, true );
+                    }else{
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + y.scope+y.name+", "+ y.scope+y.name, true ); //same above
+                    }
+                   
                     ValueObj bool = new ValueObj(r);
                     bool.setBool();
                     bool.setLocal();
@@ -577,7 +702,11 @@ exp ::= RO exp:x RC {: RESULT = x; :}
                 :}
 |  exp:x  OR exp:y {:                         
                     String r = getRegister();
-                    appendMainBuffer("%"+r+ " = or" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                     if(x.type == Type.BOOL && y.type == Type.BOOL){ //if both are bool, just compare them
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                    }else{
+                        appendMainBuffer("%"+r+ " = and" + " i1 " + "1"+", "+ "1", true );
+                    }
                     ValueObj bool = new ValueObj(r);
                     bool.setBool();
                     bool.setLocal();
@@ -602,25 +731,20 @@ ass_exp ::= exp:x {:
                         RESULT=x;
                 :}
 
-            | array_dec;
+            ;
 
-//1-D table
 
-array_dec ::= BO ass_list BC | BO BC;
 
 //local declaration
 
-local_var_list ::= LOCAL var_list;
-local_var_init ::= local_var_list EQ ass_list;
-
-
-//global declaration and initialization
-global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate error if not
+local_var_list ::= LOCAL var_list; //TODO modify simple assignment based on local/global
+local_var_init ::= local_var_list EQ ass_list {://check is sizes match and generate error if not
                                             for(int i=0; i<currentSymTable.varList.size(); i++){ //var list stores the ValueObj of those var
                                                 ValueObj ValueObjectOfVar = currentSymTable.varList.get(i); //get valueObj of that var
-                                                ValueObj tmp = currentSymTable.varTable.get(ValueObjectOfVar.name); //try to get it from symbol table
+                                                ValueObj tmp = currentSymTable.get(ValueObjectOfVar.name); //try to get it from symbol table
                                                  if(tmp == null){				                     //if null, it has never been declared
 		                                         currentSymTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
+                                                 ValueObjectOfVar.setLocal(); //set local to distinguish in var init
                                                  initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
                                                  }else{
                                                     initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
@@ -632,16 +756,80 @@ global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate 
                                             
                                             :};
 
+
+//global declaration and initialization
+global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate error if not
+                                            for(int i=0; i<currentSymTable.varList.size(); i++){ //var list stores the ValueObj of those var
+                                                ValueObj ValueObjectOfVar = currentSymTable.varList.get(i); //get valueObj of that var
+                                                ValueObj tmp = currentSymTable.get(ValueObjectOfVar.name); //try to get it from symbol table
+                                                 if(tmp == null){				                     //if null, it has never been declared
+		                                         globalSymbolTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
+                                                 initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
+                                                 }else{
+                                                    initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
+                                                    }
+                                               
+                                            }
+                                            currentSymTable.varList.clear();
+                                            currentSymTable.expList.clear();
+                                            
+                                            :};
+
+
+
+//1-D table
+
+
+
+array_declaration ::= var:n EQ BO ass_list BC {:
+
+                    if(currentSymTable.get(n.name) != null){
+                        System.out.println("ERROR VARIABLE ALREADY PRESENT");
+                    }else{
+                        Integer dim = currentSymTable.expList.size();
+                    //    @a = common dso_local global [5 x double] zeroinitializer, align 16
+                    //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
+                    String type="["+dim+"x double]";
+                    appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
+                    n.type=Type.TABLE;
+                    n.nElement=dim;
+                    n.setGlobal();
+                    System.out.println(n.name);
+                    globalSymbolTable.varTable.put(n.name, n);
+
+                    for(int i = 0; i<dim; i++){
+                        //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
+                        // %2 = getelementptr inbounds [9 x i32], [9 x i32]* %1, i32 0, i32 7
+                        String reg = getRegister();
+                        String arrayType=" [" + dim +"x double]";
+                        appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ n.scope+n.name+", i32 0, i32 " + i, true);
+                        ValueObj arrayCell = new ValueObj(reg);
+                        arrayCell.setLocal();
+                        arrayCell.type=Type.NUMBER;
+                        initVar(arrayCell, currentSymTable.expList.get(i));
+
+                    }
+                    currentSymTable.expList.clear();
+                    }
+
+
+:};
+
 //simple assignemtn
-
-
 assignment ::= var:n EQ ass_exp:x {: 
-                        ValueObj tmp = currentSymTable.varTable.get(n.name);
-                        if(tmp == null){				                    
-		                    currentSymTable.varTable.put(n.name, n);
+                        ValueObj tmp = currentSymTable.get(n.name);
+                         
+                        if(tmp == null && n.nElement == null){ //if the variable is not declared and it is not an array cell 				                    
+		                    globalSymbolTable.varTable.put(n.name, n);//TO DO: need to distinguish here between local and global var
                             RESULT = initVar(n, x);
-                        }else{
-                        RESULT = initVar(tmp, x);
+                        }else{ //if it is declared or it is an array cell
+                            if(n.nElement != null){
+                                RESULT = initVar(n, x); //if is is an array cell
+                            }else{
+                                System.out.println(tmp.name+" "+tmp.type);
+                                System.out.println(x.name+" "+x.type);
+                                RESULT = initVar(tmp, x); //if it is a declared var
+                            }
                         }
                 :};
 
@@ -658,13 +846,54 @@ var_list ::= var_list CM var:x {:  currentSymTable.varList.add(x) ;    :} //Stor
 
 
  ;
-//BUG: b=a+b if we try to assign a new var  to itself. Delay the entry in the symbol table later
+
 //simple var
 var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in the symbol table, otherwise would be sufficient to write a to have a variable
                                         //avoids things like a=b where b is not previously declared
 
 
-        | ID SO exp SC;
+        | ID:x SO exp:i SC {: //INSERT ARRAY OUT OF BOUNDS CHECKSSSS
+                            
+                          ValueObj tmp = currentSymTable.get(x); //get element corresponding to var ID from symbol table
+                            if(tmp == null){ //if it is null we cannot do anything
+                                System.out.println("ERRORE VARIABLE NOT DECLARED 2");
+                            }else{
+                                
+                                if(tmp.type == Type.TABLE){ //we check if the variable ID is a table
+                                    String index=null;
+                                    if(i.type == Type.IMMEDIATE){ //if the index is an immediate
+                                        index=String.valueOf(i.value.intValue()); //just use its value
+                                }else if(i.type == Type.NUMBER){ //if it is a number
+                                    String reg=getRegister();
+                                    String reg2=getRegister();
+                                    appendMainBuffer(loadLLVM("%"+reg, "double", "double", i.scope+i.name,"8"), true); //save the value of the var into the register
+                                     //%X = fptosi double -123.0 to i32
+                                    appendMainBuffer("%"+reg2+ " = " + "fptosi double "+"%"+reg+" to i32", true); //cast it to int32
+                                    index="%"+reg2;
+                                }else if(i.type == Type.RNUM){  //if it is a register with a number in it
+                                        String reg=getRegister();
+                                        appendMainBuffer("%"+reg+ " = " + "fptosi double "+"%"+i.name+" to i32", true); //just cast it to i32
+                                        index="%"+reg;
+                                }
+
+
+                                
+                                String reg = getRegister();
+                                String arrayType=" [" + tmp.nElement +"x double]";   
+                               appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ tmp.scope+tmp.name+", i32 0, i32 " + index, true); //get address of the array cell
+                                ValueObj arrayCell = new ValueObj(reg); //create a new object to store the register containing the reference
+                                arrayCell.setLocal();
+                                arrayCell.type=Type.NUMBER;
+                                arrayCell.name=reg; 
+                                arrayCell.nElement=tmp.nElement;//save the name in the array cell so that we can understand it has already been declared
+                                RESULT = arrayCell;
+                                
+                                }else{
+                                    System.out.println("CANNOT ACCESS A VARIABLE AS AN ARRAY");
+                                }
+                            }
+                            
+                         :};
 
 
 
@@ -675,14 +904,26 @@ var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in
 
 //block do-end
 
-block ::= DO stmt_list END;
+block ::= DO {: currentSymTable = new SymbolTable(currentSymTable, false);  :}stmt_list END {: currentSymTable=currentSymTable.getPrev(true);:};
 
 //loop condition
-loop_cond ::=  exp:x {: RESULT=x; :} ;
+loop_cond ::=  exp:x {: 
+                            if(x.type!=Type.BOOL){
+                                 String reg=getRegister();
+                                RESULT= new ValueObj(reg); 
+                                RESULT.setBool();
+                                RESULT.setLocal();
+                                appendMainBuffer("%"+reg + " = icmp "+ "eq" +" i32 0" +", " + "0", true); //calculate result
+                            }else{
+                                RESULT=x;
+                            }
+
+                         :} ;
 
 //loop 
 
 for_loop ::= FOR assignment:n {:
+                            currentSymTable = new SymbolTable(currentSymTable, false);
                             loopCount = ++totLoopCount;
                             loopList.push(loopCount);    
                             appendMainBuffer(("br label %for.cond." + loopCount), true);
@@ -705,14 +946,14 @@ for_loop ::= FOR assignment:n {:
                             loopCount=loopList.pop(); //restore it when statement is finished
                             appendMainBuffer(("br label %for.inc." + loopCount), true);
                             appendMainBuffer(("for.exit." + loopCount + ":"), true);
-
+                            currentSymTable=currentSymTable.getPrev(true);
                             
                             :}
            ;
 
 //while loop        
 //problem with multiple loops/if in series. loopCount looses tracks. Should be diminished more
-while_loop ::= WHILE {:
+while_loop ::= WHILE {: currentSymTable = new SymbolTable(currentSymTable, false); 
                         loopCount = ++totLoopCount;
                         loopList.push(loopCount); //when entering a statement, save the loop number on the stack
                         appendMainBuffer(("br label %for.cond." + loopCount), true);
@@ -723,6 +964,7 @@ while_loop ::= WHILE {:
                     :} DO {:
                         appendMainBuffer(("for.body." + loopCount + ":"), true);
                     :} stmt_list END{:
+                        currentSymTable=currentSymTable.getPrev(true);
                         loopCount=loopList.pop(); //restore it when statement is finished
                         appendMainBuffer(("br label %for.cond." + loopCount), true);
                         appendMainBuffer(("for.exit." + loopCount + ":"), true);
@@ -731,15 +973,30 @@ while_loop ::= WHILE {:
 
 //repeat-until loop
 
-repeat_loop ::= REPEAT stmt_list UNTIL loop_cond ; 
+repeat_loop ::= REPEAT {:
+                         currentSymTable = new SymbolTable(currentSymTable, false); 
+                        loopCount = ++totLoopCount;
+                        loopList.push(loopCount); //when entering a statement, save the loop number on the stack
+                        appendMainBuffer(("br label %for.body." + loopCount), true);
+                        appendMainBuffer(("for.body." + loopCount + ":"), true);
+                    :}stmt_list {:                        
+                        appendMainBuffer(("br label %for.cond." + loopCount), true);
+                        loopCount=loopList.pop(); //restore it when statement is finished
+                    :}UNTIL {:
+                        appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                    :}loop_cond:x {:                        
+                        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                        appendMainBuffer(("for.exit." + loopCount + ":"), true);
+                        currentSymTable=currentSymTable.getPrev(true);
+                    :}; 
 
 
 
 //if instruction
 //TODO: IMPLEMENT LOCAL SCOPE
-if_block ::= IF  {: 
+if_block ::= IF  {:  currentSymTable = new SymbolTable(currentSymTable, false); 
                     loopCount = ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
-                :} exp:x {:
+                :} loop_cond:x {:
                     appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
                 :}  THEN {:
                     appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt_list  else_block END
@@ -750,15 +1007,18 @@ else_block ::= {:
                      appendMainBuffer(("br label %if.exit." + loopCount), true);
                 :} ELSE {: 
                     appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                    
                 :}stmt_list {:
                     loopList.push(loopCount);
                     appendMainBuffer(("br label %if.exit." + loopCount), true);
                     appendMainBuffer(("if.exit." + loopCount + ":"), true);
+                    currentSymTable=currentSymTable.getPrev(true);
                     :}|
                     {:
                         loopCount=loopList.pop();//restore it when statement is finished
                         appendMainBuffer(("br label %if.else." + loopCount), true);
                         appendMainBuffer(("if.else." + loopCount + ":"), true);   
+                        currentSymTable=currentSymTable.getPrev(true);
                     :} ;
 
 
@@ -766,21 +1026,65 @@ else_block ::= {:
 /**** FUNCTIONS ****/
 /*******************/
 
+func_decl_param ::= var_list | ;
 
 func_list ::= | func_list function_decl;
-function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable); 
-                              currentSymTable.currentBuffer=funcBuffer;
+function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable, true); //use new symbol table
+                              currentSymTable.currentBuffer=funcBuffer; //set buffer to func buffer
 
-                 :}ID RO func_param_list RC stmt_list END {: currentSymTable = currentSymTable.prev; currentSymTable.currentBuffer=mainBuffer; :};
+                 :}ID:fName RO func_decl_param RC {: 
+
+                    FuncObj func = new FuncObj(fName); //create new funct object
+                    func.nargsTot=currentSymTable.varList.size(); //set number of param in the function
+
+                    appendMainBuffer(("define double @" + fName + "("), false); //definition of function
+                    
+                    for (int i = 0; i < currentSymTable.varList.size(); i++){ //loop through all parameters and append it to the function delcaration
+                        if(i!=currentSymTable.varList.size()-1)
+                            appendMainBuffer("double, ", false);
+                        else
+                            appendMainBuffer("double ", false);
+                    }
+                   
+                    appendMainBuffer((") {"), true); //end  function declaration
+
+                     currentSymTable.registerCount = func.nargsTot + 1;
+
+
+                
+                    for (int i = 0; i < currentSymTable.varList.size(); i++){ //inside the function, allocate a value for each parameter
+                        String reg = getRegister();
+                        ValueObj tmp = new ValueObj(reg); //create new value parameter
+                        tmp.setDouble();
+                        tmp.setLocal();
+                        currentSymTable.varTable.put(currentSymTable.varList.get(i).name, tmp); //add to the symbol table
+                   
+                        appendMainBuffer(("%" + reg + " = alloca " + "double" + ", align " + "8"), true); //allocate parameter
+                        appendMainBuffer(("store " + "double" + " %" + i + ", "  + "double* " + "%" + reg + ", align 8"), true); //store passed parameter in the function param
+                    }
+                    
+                    currentSymTable.varList.clear();  //clear var list
+                    :}stmt_list END {: appendMainBuffer("\n}", true);  //use directly the regitter
+
+                                        currentSymTable = currentSymTable.getPrev(false); currentSymTable.currentBuffer=mainBuffer; //go to previous symbol table e buffer
+                                    :};
 //When entering into a function, it is necessary to switch the StringBuffer --> Need to add stringbuffer in the symbol table
 
-/*define <retval> @<funcName> (<type>, ..., <type>) {
-  ...
-  ret <type> <expression>
-}*/
-
-ret ::= RETURN exp;
-        //| RETURN;
+ret ::= RETURN exp:x {: 
+                        
+                        if(x.type == Type.IMMEDIATE){ 
+                            appendMainBuffer("ret double " + x.value, true);  //append just the value
+                             getRegister();
+                        }else if(x.type == Type.NUMBER){
+                            String reg = getRegister(); //need to load the value into a register
+                            appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8"), true);
+                            appendMainBuffer("ret double " + "%"+reg, true); 
+                            getRegister(); 
+                        }else if(x.type == Type.RNUM){
+                            appendMainBuffer("ret double " + x.scope+x.name, true);  //use directly the regitter
+                             getRegister();
+                        }
+        :};
 
 
 
@@ -809,11 +1113,20 @@ print_func ::=  PRINT RO STRING:value RC {:
 
 //print_func_args ::= print_func_args CM STRING | print_func_args CM exp |  STRING | exp ;
 
-func_param_list ::= func_param_list CM exp 
-                    | exp   ;
 
 
-func_call ::= ID:name RO  func_param_list RC;
+func_param_list ::= func_param_list:x CM exp:y {: RESULT=x;
+                                                    x.add(y);  :} 
+                    | exp:y {: RESULT= new ArrayList<ValueObj>();
+                                RESULT.add(y);
+                                :}  ;
+
+
+func_call ::= ID:name RO  func_param_list RC {:
+                                                String reg=getRegister();
+                                            //%1 = call i32 @test(i32 %0):
+
+                                        :};
 
 
 

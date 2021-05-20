@@ -463,7 +463,7 @@ func ::= FUNC ID:name {:
 
 :} stmt_list BC {:
     if (!currentFunc.ret && ret.type.equals("void"))
-        append(("ret void"), true); //add void return if function is void and there is not any return instruction
+        append(("ret void\n"), true); //add void return if function is void and there is not any return instruction
     else if (!currentFunc.ret && !ret.type.equals("void"))
         genSemError("Missing return statement in function '" + currentFunc.name + "'");
     append(("}"), true);
@@ -1110,7 +1110,7 @@ short_declaration ::= var_stmt_list COL EQ ass_list {: currentFunc.currentSymbol
 ass_list ::= ass_list CM ass_exp | ass_exp;
 
 ass_exp ::= exp:x {:
-    ValueObj p = currentFunc.currentSymbolTable.varList.get(currentFunc.currentSymbolTable.nargs);
+    ValueObj p = currentFunc.varList.get(currentFunc.currentSymbolTable.nargs);
     ValueObj code;
 
     if (p.typeItem != null){
