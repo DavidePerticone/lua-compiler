@@ -1,3 +1,7 @@
-a=5
-d=2
-d=a+d*d*a+a-d+2
+a=0
+while a<5 do
+    if a == 2 then
+    a=a+1
+    end
+    a=a+1
+end

@@ -23,8 +23,10 @@ init with {:
    funcBuffer = new StringBuffer(); //buffer for function declaration
    globalDecBuffer = new StringBuffer(); //buffer for global var declaration
    mainBuffer = new StringBuffer(); //buffer used for main function
+   currentSymTable.currentBuffer=mainBuffer;
    bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); //output file
-   
+   loopCount = 0;
+   totLoopCount = 0;
    /*Structure:
    Global buffer
    Function buffer
@@ -42,8 +44,10 @@ public StringBuffer funcBuffer;
 public StringBuffer globalDecBuffer;
 public StringBuffer mainBuffer;
 public BufferedWriter bwr;
+public int loopCount;
+public int totLoopCount;
 
-public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
+public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
 public class SymbolTable{
         public ArrayList<ValueObj> varList;
@@ -52,6 +56,7 @@ public class SymbolTable{
         public int nargs;
         public Integer registerCount; //used as counter for SSA registers
         SymbolTable prev;
+        StringBuffer currentBuffer;
         
         public SymbolTable(SymbolTable p){
             this.varTable = new HashMap<String, ValueObj>();
@@ -107,6 +112,10 @@ public class ValueObj {
             this.type=Type.RNUM;
         }
 
+        public void setBool(){
+            this.type=Type.BOOL;
+        }
+
         
   
  
@@ -127,16 +136,16 @@ action code {:
             funcBuffer.append("\n");
     }
 
-     public void appendGlobalDecBuffer(String s, boolean newLine){
+    public void appendGlobalDecBuffer(String s, boolean newLine){
         globalDecBuffer.append(s);
         if (newLine)
             globalDecBuffer.append("\n");
     }
 
-     public void appendMainBuffer(String s, boolean newLine){
-       mainBuffer.append(s);
+    public void appendMainBuffer(String s, boolean newLine){
+       currentSymTable.currentBuffer.append(s);
         if (newLine)
-            mainBuffer.append("\n");
+            currentSymTable.currentBuffer.append("\n");
     }
 
     public String getRegister(){
@@ -162,7 +171,14 @@ action code {:
 
     }
 
-    public void initVar(ValueObj n, ValueObj x){
+   /* public String loadLLVM2(String outName, String firstOp, String SecondOp, String align){
+        // %2 = load double, double* @b, align 8
+
+        return outName+" = " + "load " + firstOp+", "+inputType+"* "+inputName+", "+"align "+align;
+
+    }*/
+
+    public void initVarOld(ValueObj n, ValueObj x){
                                     //if the variable has never been used before, it means that must be declared
                         if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
                             
@@ -204,7 +220,48 @@ action code {:
 
     }
 
-    public ValueObj operation(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
+     public void initVar(ValueObj n, ValueObj x){
+
+                        String op1, op2;
+
+                        if(x.type == Type.IMMEDIATE){
+                            op2=""+x.value;
+                            if(n.type == null){
+                            n.setDouble(); //set type number in the variable
+                            n.setGlobal();
+                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+op2), true); //append to the Global declaration buffer
+                            }else if(n.type == Type.NUMBER){
+                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
+                        }
+                        }else if(x.type == Type.NUMBER){
+                            op2=x.scope+x.name;
+                            if(n.type == null){
+                                n.setDouble(); //set type number in the variable
+                                n.setGlobal();
+                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
+                                String reg = getRegister(); //get a new register
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", op2,"8"), true); //save the value of the var into the register
+                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
+                            }else if(n.type == Type.NUMBER){
+                                String reg = getRegister();
+                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
+                                appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
+
+                            }
+                        }else if(x.type == Type.RNUM){
+                            op2="%"+x.name;
+                            if(n.type == null){
+                                n.setDouble(); //set type number in the variable
+                                n.setGlobal();
+                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
+                                appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true); 
+                            }else if(n.type == Type.NUMBER){
+                            appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true);
+                            }
+                        }
+    }
+
+    public ValueObj operationOld(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
                             ValueObj RESULT=null; //final result to return
                             String a; //variables for registers
                             String b;
@@ -284,6 +341,87 @@ action code {:
                             return RESULT;
                            
     }
+
+     public ValueObj operation(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
+                            ValueObj RESULT=null; //final result to return
+                            String a=null; //variables for registers
+                            String b=null;
+                            String r=null;
+                            String op1=null, op2=null;
+
+
+                             if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
+                                ///create switch
+                                if(operation.compareTo("fadd")==0)
+                                    RESULT=new ValueObj(x.value+y.value);
+                                else if(operation.compareTo("fsub")==0)
+                                    RESULT=new ValueObj(x.value-y.value);
+                                else if(operation.compareTo("fmul")==0)
+                                    RESULT=new ValueObj(x.value*y.value);
+                                else if(operation.compareTo("fdiv")==0)
+                                    RESULT=new ValueObj(x.value/y.value);
+                                RESULT.type=Type.IMMEDIATE; //the returning value is itself and integer
+                            }else{
+
+                                if (x.type==Type.NUMBER){
+                                     a=getRegister();
+                                     appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true); //load value of first
+                                     op1="%"+a;
+                                }else if(x.type==Type.IMMEDIATE){
+                                    op1=""+x.value;
+                                }else if(x.type==Type.RNUM){
+                                     op1="%"+x.name;
+                                }
+                                
+                                if(y.type==Type.NUMBER){
+                                    b=getRegister();
+                                    appendMainBuffer(loadLLVM("%"+b, "double", "double", y.scope+y.name, "8" ), true); //load value of second
+                                    op2="%"+b;
+                                }else if(y.type==Type.IMMEDIATE){
+                                    op2=""+y.value;
+                                }else if(y.type==Type.RNUM){
+                                     op2="%"+y.name;
+                                }
+                                r=getRegister();
+                                appendMainBuffer("%"+r+" = "+ operation +" double "+op1+", " +op2, true); //perform operation and save in register
+                                RESULT = new ValueObj(r);
+                                RESULT.setLocal();
+                                RESULT.setRNUM();
+                            }
+                           
+                           
+                            return RESULT;
+    } 
+
+    public ValueObj logicExpEval(String operation, ValueObj x, ValueObj y){
+
+            
+                    String op1=null;
+                    String op2=null;
+                    if(x.type == Type.IMMEDIATE){ //if first operand is and immediate
+                        op1=""+x.value;             //just store the value
+                    }else if(x.type == Type.NUMBER){    //if it is a var
+                        String reg=getRegister(); 
+                        //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
+                        appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8" ),true); //load it
+                        op1="%"+reg; //save register where it is loaded
+                    }if(y.type == Type.IMMEDIATE){ //same as first operand
+                        op2=""+y.value;
+                    }else if(y.type == Type.NUMBER){
+                        String reg=getRegister();
+                         appendMainBuffer(loadLLVM("%"+reg, "double", "double", y.scope+y.name, "8" ), true);
+                        op2="%"+reg;
+                    }
+                    String result = getRegister(); //get register for output
+                    appendMainBuffer("%"+result + " = fcmp "+ operation +" double " + op1 +", " + op2, true); //calculate result
+                    ValueObj RESULT =  new ValueObj(result); //return new value
+                    RESULT.setBool();
+                    RESULT.setLocal();
+                    
+                    return RESULT;
+
+    }                
+    
 :}
 
 
@@ -300,11 +438,11 @@ terminal Double NUMBER;
 //Non terminal tokens
 non terminal global_var_init, local_var, block, array_dec;
 non terminal  local_var_init, local_var_list, var_list, ass_list;
-non terminal for_loop, stmt_list, stmt, loop_cond, assignment;
+non terminal for_loop, stmt_list, stmt,  assignment;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
 non terminal print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
 non terminal ValueObj var;
-non terminal ValueObj ass_exp, exp;
+non terminal ValueObj ass_exp, loop_cond, exp;
 
 //Precedences
 precedence left OR;
@@ -324,7 +462,7 @@ start with prog;
 
 prog ::= func_list {:
 
-       
+       bwr.write(funcBuffer.toString());
 
 :}  stmt_list  {:
 		 bwr.write(globalDecBuffer.toString());
@@ -368,7 +506,7 @@ stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | whi
     Concatenation ---TODO
 */
 
-exp ::= RO exp:x RC 
+exp ::= RO exp:x RC {: RESULT = x; :}
 | NUMBER:x {:
                 RESULT=new ValueObj(x);
 
@@ -384,16 +522,32 @@ exp ::= RO exp:x RC
 | exp:x  DIV exp:y   {: RESULT=operation("fdiv", x, y);  :}
 | exp:x HAT exp:y
 /* Logical expressions */
-| exp  AND exp 
-| exp  OR exp  
-| NOT exp
+| exp:x  AND exp:y {:                         
+                    String r = getRegister();
+                    appendMainBuffer("%"+r+ " = and" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                    ValueObj bool = new ValueObj(r);
+                    bool.setBool();
+                    bool.setLocal();
+                    RESULT = bool;
+                :}
+|  exp:x  OR exp:y {:                         
+                    String r = getRegister();
+                    appendMainBuffer("%"+r+ " = or" + " i1 " + x.scope+x.name+", "+ y.scope+y.name, true );
+                    ValueObj bool = new ValueObj(r);
+                    bool.setBool();
+                    bool.setLocal();
+                    RESULT = bool;
+                :}  
+| NOT exp:x {:                         
+                    System.out.println("NOT bitwise operation not supported!!");
+                :}  
 /* Relational expressions */
-| exp  EQ EQ exp  
-| exp  NOTEQ exp  
-| exp  MIN exp  
-| exp  MAJ exp  
-| exp  MIN_EQ exp  
-| exp  MAJ_EQ exp  
+| exp:x  EQ EQ exp:y  {: RESULT=logicExpEval("oeq", x, y);  :}
+| exp:x  NOTEQ exp:y   {: RESULT=logicExpEval("one", x, y); :}
+| exp:x  MIN exp:y  {:  RESULT=logicExpEval("olt", x, y); :}
+| exp:x  MAJ exp:y  {:  RESULT=logicExpEval("ogt", x, y); :}
+| exp:x MIN_EQ exp:y  {: RESULT=logicExpEval("ole", x, y); :}
+| exp:x  MAJ_EQ exp:y  {: RESULT=logicExpEval("oge", x, y); :}
 | RO error RC 
 ;
 
@@ -441,7 +595,7 @@ var_list ::= var_list CM var:x {:  currentSymTable.varList.add(x) ;    :} //Stor
 
 
  ;
-
+//BUG: b=a+b if we try to assign a new var  to itself. Delay the entry in the symbol table later
 //simple var
 var ::= ID:n {: 
                 RESULT =currentSymTable.varTable.get(n);
@@ -468,7 +622,7 @@ var ::= ID:n {:
 block ::= DO stmt_list END;
 
 //loop condition
-loop_cond ::=  exp ;
+loop_cond ::=  exp:x {: RESULT=x; :} ;
 
 //loop 
 
@@ -477,7 +631,20 @@ for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END
 
 //while loop        
 
-while_loop ::= WHILE  loop_cond  DO stmt_list END;
+while_loop ::= WHILE {:
+    loopCount = ++totLoopCount;
+    appendMainBuffer(("br label %for.cond." + loopCount), true);
+    appendMainBuffer(("for.cond." + loopCount + ":"), true);
+:} loop_cond:x {:
+    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+:} DO {:
+    appendMainBuffer(("for.body." + loopCount + ":"), true);
+:} stmt_list END{:
+    appendMainBuffer(("br label %for.cond." + loopCount), true);
+    appendMainBuffer(("for.exit." + loopCount + ":"), true);
+
+    loopCount--;
+:};
 
 
 //repeat-until loop
@@ -487,11 +654,29 @@ repeat_loop ::= REPEAT stmt_list UNTIL loop_cond ;
 
 
 //if instruction
-
-if_block ::= IF  exp  THEN  stmt_list  else_block END
+//TODO: IMPLEMENT LOCAL SCOPE
+if_block ::= IF  {: loopCount = ++totLoopCount; :} exp:x {:
+        
+        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
+     
+        :}  THEN {:appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt_list  else_block END
                 | IF error else_block END{: System.out.println("error");:};
 
-else_block ::= ELSE stmt_list | ;
+else_block ::= {: 
+    appendMainBuffer(("br label %if.exit." + loopCount), true);
+:} ELSE {: 
+    appendMainBuffer(("if.else." + loopCount + ":"), true); 
+:}stmt_list {:
+    appendMainBuffer(("br label %if.exit." + loopCount), true);
+    appendMainBuffer(("if.exit." + loopCount + ":"), true);
+
+    loopCount--;
+:}|{:
+    appendMainBuffer(("br label %if.else." + loopCount), true);
+    appendMainBuffer(("if.else." + loopCount + ":"), true);
+
+    loopCount--;
+:} ;
 
 
 /*******************/
@@ -500,8 +685,11 @@ else_block ::= ELSE stmt_list | ;
 
 
 func_list ::= | func_list function_decl;
-function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable); :}ID RO func_param_list RC stmt_list END {: currentSymTable = currentSymTable.prev;:};
+function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable); 
+                              currentSymTable.currentBuffer=funcBuffer;
 
+                 :}ID RO func_param_list RC stmt_list END {: currentSymTable = currentSymTable.prev; currentSymTable.currentBuffer=mainBuffer; :};
+//When entering into a function, it is necessary to switch the StringBuffer --> Need to add stringbuffer in the symbol table
 
 /*define <retval> @<funcName> (<type>, ..., <type>) {
   ...
