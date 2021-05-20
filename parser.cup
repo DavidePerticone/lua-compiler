@@ -552,7 +552,12 @@ exp ::= RO exp:x RC {: RESULT = x; :}
 
             :}
 | MINUS NUMBER:x  {:    RESULT=new ValueObj(-x);   :} %prec UMIN
-| var:x {:  RESULT=x;  :}
+| var:x {:   
+             ValueObj tmp = currentSymTable.get(x.name);
+            if(tmp == null){
+                System.out.println("ERRORE VARIABLE NOT DECLARED");
+            }  
+            RESULT=tmp;  :}
 | NIL
 | func_call
 /* Arithmetic expressions */
@@ -611,8 +616,16 @@ local_var_init ::= local_var_list EQ ass_list;
 
 //global declaration and initialization
 global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate error if not
-                                            for(int i=0; i<currentSymTable.varList.size(); i++){                                               
-                                                initVar(currentSymTable.varList.get(i), currentSymTable.expList.get(i));
+                                            for(int i=0; i<currentSymTable.varList.size(); i++){ //var list stores the ValueObj of those var
+                                                ValueObj ValueObjectOfVar = currentSymTable.varList.get(i); //get valueObj of that var
+                                                ValueObj tmp = currentSymTable.varTable.get(ValueObjectOfVar.name); //try to get it from symbol table
+                                                 if(tmp == null){				                     //if null, it has never been declared
+		                                         currentSymTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
+                                                 initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
+                                                 }else{
+                                                    initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
+                                                    }
+                                               
                                             }
                                             currentSymTable.varList.clear();
                                             currentSymTable.expList.clear();
@@ -620,7 +633,17 @@ global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate 
                                             :};
 
 //simple assignemtn
-assignment ::= var:n EQ ass_exp:x {: RESULT = initVar(n, x);:};
+
+
+assignment ::= var:n EQ ass_exp:x {: 
+                        ValueObj tmp = currentSymTable.varTable.get(n.name);
+                        if(tmp == null){				                    
+		                    currentSymTable.varTable.put(n.name, n);
+                            RESULT = initVar(n, x);
+                        }else{
+                        RESULT = initVar(tmp, x);
+                        }
+                :};
 
 
 
@@ -637,15 +660,8 @@ var_list ::= var_list CM var:x {:  currentSymTable.varList.add(x) ;    :} //Stor
  ;
 //BUG: b=a+b if we try to assign a new var  to itself. Delay the entry in the symbol table later
 //simple var
-var ::= ID:n {: 
-                RESULT =currentSymTable.varTable.get(n);
-                if(RESULT == null){		
-		                ValueObj var = new ValueObj(n);
-		                currentSymTable.varTable.put(n, var);
-		                RESULT=var;
-                      }
-               
-            :}
+var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in the symbol table, otherwise would be sufficient to write a to have a variable
+                                        //avoids things like a=b where b is not previously declared
 
 
         | ID SO exp SC;
