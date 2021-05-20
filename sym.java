@@ -90,51 +90,5 @@ public class sym {
   "ID",
   "NUMBER"
   };
-public String[] TT;
-	public sym(){
-		TT = new String[100];
-		TT[36]=new String("FUNCTION");
-		TT[10]=new String("SO");
-		TT[4]=new String("MAJ");
-		TT[34]=new String("REPEAT");
-		TT[11]=new String("SC");
-		TT[25]=new String("FOR");
-		TT[19]=new String("MINUS");
-		TT[20]=new String("STAR");
-		TT[9]=new String("NOT");
-		TT[7]=new String("AND");
-		TT[23]=new String("CM");
-		TT[3]=new String("UMIN");
-		TT[32]=new String("NIL");
-		TT[8]=new String("OR");
-		TT[21]=new String("DIV");
-		TT[35]=new String("UNTIL");
-		TT[14]=new String("RO");
-		TT[5]=new String("MIN_EQ");
-		TT[18]=new String("PLUS");
-		TT[2]=new String("MIN");
-		TT[26]=new String("IF");
-		TT[39]=new String("ID");
-		TT[0]=new String("EOF");
-		TT[37]=new String("RETURN");
-		TT[1]=new String("error");
-		TT[15]=new String("RC");
-		TT[22]=new String("HAT");
-		TT[40]=new String("NUMBER");
-		TT[16]=new String("BO");
-		TT[12]=new String("EQ");
-		TT[27]=new String("ELSE");
-		TT[17]=new String("BC");
-		TT[33]=new String("WHILE");
-		TT[28]=new String("THEN");
-		TT[29]=new String("END");
-		TT[31]=new String("STRING");
-		TT[30]=new String("LOCAL");
-		TT[6]=new String("MAJ_EQ");
-		TT[38]=new String("PRINT");
-		TT[24]=new String("DO");
-		TT[13]=new String("NOTEQ");
-	}
-public String getTT(int i){return TT[i];}
 }
 

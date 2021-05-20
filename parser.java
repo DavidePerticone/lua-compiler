@@ -12,6 +12,7 @@ import java.util.regex.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.LinkedList;
 import java_cup.runtime.XMLElement;
 
 /** CUP v0.11b beta 20140226 generated parser.
@@ -572,6 +573,7 @@ public class parser extends java_cup.runtime.lr_parser {
    bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); //output file
    loopCount = 0;
    totLoopCount = 0;
+   loopList=new LinkedList<Integer>();
    /*Structure:
    Global buffer
    Function buffer
@@ -580,13 +582,7 @@ public class parser extends java_cup.runtime.lr_parser {
 
    */
 
- Tree = new DisegnaAlbero();   }public static DisegnaAlbero Tree;
-
-  /** Scan to get the next Symbol. */
-  public java_cup.runtime.Symbol scan()
-    throws java.lang.Exception
-    {
- Symbol s=_scanner.next_token(); Tree.push(s.toString(), 0); return s;   }
+    }
 
 
     
@@ -597,6 +593,7 @@ public StringBuffer mainBuffer;
 public BufferedWriter bwr;
 public int loopCount;
 public int totLoopCount;
+public LinkedList<Integer> loopList;
 
 public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
@@ -949,24 +946,23 @@ class CUP$parser$actions {
             
                     String op1=null;
                     String op2=null;
-                    if(x.type == Type.IMMEDIATE){
-                        op1=""+x.value;
-                    }else if(x.type == Type.NUMBER){
-                        String reg=getRegister();
+                    if(x.type == Type.IMMEDIATE){ //if first operand is and immediate
+                        op1=""+x.value;             //just store the value
+                    }else if(x.type == Type.NUMBER){    //if it is a var
+                        String reg=getRegister(); 
                         //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
-                        appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8" ),true);
-                        op1="%"+reg;
-                    }if(y.type == Type.IMMEDIATE){
+                        appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8" ),true); //load it
+                        op1="%"+reg; //save register where it is loaded
+                    }if(y.type == Type.IMMEDIATE){ //same as first operand
                         op2=""+y.value;
                     }else if(y.type == Type.NUMBER){
                         String reg=getRegister();
-                        //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
                          appendMainBuffer(loadLLVM("%"+reg, "double", "double", y.scope+y.name, "8" ), true);
                         op2="%"+reg;
                     }
-                    String result = getRegister();
-                    appendMainBuffer("%"+result + " = fcmp "+ operation +" double " + op1 +", " + op2, true);
-                    ValueObj RESULT =  new ValueObj(result);
+                    String result = getRegister(); //get register for output
+                    appendMainBuffer("%"+result + " = fcmp "+ operation +" double " + op1 +", " + op2, true); //calculate result
+                    ValueObj RESULT =  new ValueObj(result); //return new value
                     RESULT.setBool();
                     RESULT.setLocal();
                     
@@ -998,7 +994,7 @@ class CUP$parser$actions {
         {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 0: // $START ::= prog EOF 
-            { 
+            {
               Object RESULT =null;
 		int start_valleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).left;
 		int start_valright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).right;
@@ -1012,7 +1008,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 1: // NT$0 ::= 
-            { parser.Tree.reduce(0,"NT$0",0);
+            {
               Object RESULT =null;
 
 
@@ -1025,7 +1021,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 2: // prog ::= func_list NT$0 stmt_list 
-            { parser.Tree.reduce(3,"prog",0);
+            {
               Object RESULT =null;
               // propagate RESULT from NT$0
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
@@ -1050,7 +1046,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 3: // declaration ::= local_var_init 
-            { parser.Tree.reduce(1,"declaration",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("declaration",26, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1059,7 +1055,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 4: // declaration ::= local_var_list 
-            { parser.Tree.reduce(1,"declaration",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("declaration",26, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1068,7 +1064,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 5: // declaration ::= global_var_init 
-            { parser.Tree.reduce(1,"declaration",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("declaration",26, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1077,7 +1073,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 6: // declaration ::= assignment 
-            { parser.Tree.reduce(1,"declaration",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("declaration",26, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1086,7 +1082,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 7: // stmt_list ::= stmt_list stmt 
-            { parser.Tree.reduce(2,"stmt_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt_list",9, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1095,7 +1091,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 8: // stmt_list ::= stmt 
-            { parser.Tree.reduce(1,"stmt_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt_list",9, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1104,7 +1100,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 9: // stmt ::= if_block 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1113,7 +1109,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 10: // stmt ::= for_loop 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1122,7 +1118,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 11: // stmt ::= print_func 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1131,7 +1127,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 12: // stmt ::= ret 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1140,7 +1136,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 13: // stmt ::= declaration 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1149,7 +1145,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 14: // stmt ::= func_call 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1158,7 +1154,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 15: // stmt ::= while_loop 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1167,7 +1163,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 16: // stmt ::= repeat_loop 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1176,7 +1172,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 17: // stmt ::= block 
-            { parser.Tree.reduce(1,"stmt",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("stmt",10, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1185,7 +1181,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 18: // exp ::= RO exp RC 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).right;
@@ -1197,7 +1193,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 19: // exp ::= NUMBER 
-            { parser.Tree.reduce(1,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1212,7 +1208,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 20: // exp ::= MINUS NUMBER 
-            { parser.Tree.reduce(2,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1224,7 +1220,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 21: // exp ::= var 
-            { parser.Tree.reduce(1,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1236,7 +1232,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 22: // exp ::= NIL 
-            { parser.Tree.reduce(1,"exp",0);
+            {
               ValueObj RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("exp",30, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1245,7 +1241,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 23: // exp ::= func_call 
-            { parser.Tree.reduce(1,"exp",0);
+            {
               ValueObj RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("exp",30, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1254,7 +1250,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 24: // exp ::= exp PLUS exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1269,7 +1265,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 25: // exp ::= exp MINUS exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1284,7 +1280,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 26: // exp ::= exp STAR exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1299,7 +1295,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 27: // exp ::= exp DIV exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1314,7 +1310,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 28: // exp ::= exp HAT exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1329,7 +1325,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 29: // exp ::= exp AND exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1351,7 +1347,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 30: // exp ::= exp OR exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1373,7 +1369,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 31: // exp ::= NOT exp 
-            { parser.Tree.reduce(2,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1387,7 +1383,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 32: // exp ::= exp EQ EQ exp 
-            { parser.Tree.reduce(4,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).right;
@@ -1402,7 +1398,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 33: // exp ::= exp NOTEQ exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1417,7 +1413,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 34: // exp ::= exp MIN exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1432,7 +1428,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 35: // exp ::= exp MAJ exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1447,7 +1443,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 36: // exp ::= exp MIN_EQ exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1462,7 +1458,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 37: // exp ::= exp MAJ_EQ exp 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1477,7 +1473,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 38: // exp ::= RO error RC 
-            { parser.Tree.reduce(3,"exp",0);
+            {
               ValueObj RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("exp",30, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1486,7 +1482,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 39: // ass_list ::= ass_list CM ass_exp 
-            { parser.Tree.reduce(3,"ass_list",0);
+            {
               Object RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1498,7 +1494,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 40: // ass_list ::= ass_exp 
-            { parser.Tree.reduce(1,"ass_list",0);
+            {
               Object RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1510,7 +1506,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 41: // ass_exp ::= exp 
-            { parser.Tree.reduce(1,"ass_exp",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1524,7 +1520,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 42: // ass_exp ::= array_dec 
-            { parser.Tree.reduce(1,"ass_exp",0);
+            {
               ValueObj RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("ass_exp",28, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1533,7 +1529,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 43: // array_dec ::= BO ass_list BC 
-            { parser.Tree.reduce(3,"array_dec",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("array_dec",3, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1542,7 +1538,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 44: // array_dec ::= BO BC 
-            { parser.Tree.reduce(2,"array_dec",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("array_dec",3, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1551,7 +1547,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 45: // local_var_list ::= LOCAL var_list 
-            { parser.Tree.reduce(2,"local_var_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("local_var_list",5, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1560,7 +1556,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 46: // local_var_init ::= local_var_list EQ ass_list 
-            { parser.Tree.reduce(3,"local_var_init",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("local_var_init",4, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1569,7 +1565,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 47: // global_var_init ::= var_list EQ ass_list 
-            { parser.Tree.reduce(3,"global_var_init",0);
+            {
               Object RESULT =null;
 		//check is sizes match and generate error if not
                                             for(int i=0; i<currentSymTable.varList.size(); i++){                                               
@@ -1585,7 +1581,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 48: // assignment ::= var EQ ass_exp 
-            { parser.Tree.reduce(3,"assignment",0);
+            {
               Object RESULT =null;
 		int nleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int nright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
@@ -1600,7 +1596,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 49: // var_list ::= var_list CM var 
-            { parser.Tree.reduce(3,"var_list",0);
+            {
               Object RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1612,7 +1608,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 50: // var_list ::= var 
-            { parser.Tree.reduce(1,"var_list",0);
+            {
               Object RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1624,7 +1620,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 51: // var ::= ID 
-            { parser.Tree.reduce(1,"var",0);
+            {
               ValueObj RESULT =null;
 		int nleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int nright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1644,7 +1640,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 52: // var ::= ID SO exp SC 
-            { parser.Tree.reduce(4,"var",0);
+            {
               ValueObj RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("var",27, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1653,7 +1649,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 53: // block ::= DO stmt_list END 
-            { parser.Tree.reduce(3,"block",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("block",2, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1662,7 +1658,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 54: // loop_cond ::= exp 
-            { parser.Tree.reduce(1,"loop_cond",0);
+            {
               ValueObj RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
@@ -1674,7 +1670,7 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 55: // for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END 
-            { parser.Tree.reduce(9,"for_loop",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("for_loop",8, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-8)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1683,48 +1679,49 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 56: // NT$1 ::= 
-            { parser.Tree.reduce(0,"NT$1",0);
+            {
               Object RESULT =null;
 
-    loopCount = ++totLoopCount;
-    appendMainBuffer(("br label %for.cond." + loopCount), true);
-    appendMainBuffer(("for.cond." + loopCount + ":"), true);
-
+                        loopCount = ++totLoopCount;
+                        loopList.push(loopCount); //when entering a statement, save the loop number on the stack
+                        appendMainBuffer(("br label %for.cond." + loopCount), true);
+                        appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$1",32, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 57: // NT$2 ::= 
-            { parser.Tree.reduce(0,"NT$2",0);
+            {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
 
-    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
-
+                        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$2",33, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 58: // NT$3 ::= 
-            { parser.Tree.reduce(0,"NT$3",0);
+            {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
 
-    appendMainBuffer(("for.body." + loopCount + ":"), true);
-
+                        appendMainBuffer(("for.body." + loopCount + ":"), true);
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$3",34, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 59: // while_loop ::= WHILE NT$1 loop_cond NT$2 DO NT$3 stmt_list END 
-            { parser.Tree.reduce(8,"while_loop",0);
+            {
               Object RESULT =null;
               // propagate RESULT from NT$3
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
@@ -1732,18 +1729,17 @@ class CUP$parser$actions {
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-5)).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-5)).value;
 		
-    appendMainBuffer(("br label %for.cond." + loopCount), true);
-    appendMainBuffer(("for.exit." + loopCount + ":"), true);
-
-    loopCount--;
-
+                        loopCount=loopList.pop(); //restore it when statement is finished
+                        appendMainBuffer(("br label %for.cond." + loopCount), true);
+                        appendMainBuffer(("for.exit." + loopCount + ":"), true);
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("while_loop",12, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-7)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 60: // repeat_loop ::= REPEAT stmt_list UNTIL loop_cond 
-            { parser.Tree.reduce(4,"repeat_loop",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("repeat_loop",13, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1752,44 +1748,45 @@ class CUP$parser$actions {
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 61: // NT$4 ::= 
-            { parser.Tree.reduce(0,"NT$4",0);
+            {
               Object RESULT =null;
- loopCount = ++totLoopCount; 
+ 
+                    loopCount = ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
+                
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$4",35, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 62: // NT$5 ::= 
-            { parser.Tree.reduce(0,"NT$5",0);
+            {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
 
-        
-        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
-        System.out.println("here");
-        
+                    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
+                
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$5",36, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 63: // NT$6 ::= 
-            { parser.Tree.reduce(0,"NT$6",0);
+            {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
-appendMainBuffer(("if.body." + loopCount + ":"), true);
+
+                    appendMainBuffer(("if.body." + loopCount + ":"), true);
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$6",37, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 64: // if_block ::= IF NT$4 exp NT$5 THEN NT$6 stmt_list else_block END 
-            { parser.Tree.reduce(9,"if_block",0);
+            {
               Object RESULT =null;
               // propagate RESULT from NT$6
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
@@ -1803,7 +1800,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 65: // if_block ::= IF error else_block END 
-            { parser.Tree.reduce(4,"if_block",0);
+            {
               Object RESULT =null;
 		 System.out.println("error");
               CUP$parser$result = parser.getSymbolFactory().newSymbol("if_block",14, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1812,59 +1809,57 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 66: // NT$7 ::= 
-            { parser.Tree.reduce(0,"NT$7",0);
+            {
               Object RESULT =null;
  
-    appendMainBuffer(("br label %if.exit." + loopCount), true);
-
+                     appendMainBuffer(("br label %if.exit." + loopCount), true);
+                
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$7",38, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 67: // NT$8 ::= 
-            { parser.Tree.reduce(0,"NT$8",0);
+            {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
  
-    appendMainBuffer(("if.else." + loopCount + ":"), true); 
-
+                    appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$8",39, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 68: // else_block ::= NT$7 ELSE NT$8 stmt_list 
-            { parser.Tree.reduce(4,"else_block",0);
+            {
               Object RESULT =null;
               // propagate RESULT from NT$8
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		
-    appendMainBuffer(("br label %if.exit." + loopCount), true);
-    appendMainBuffer(("if.exit." + loopCount + ":"), true);
-
-    loopCount--;
-
+                    loopList.push(loopCount);
+                    appendMainBuffer(("br label %if.exit." + loopCount), true);
+                    appendMainBuffer(("if.exit." + loopCount + ":"), true);
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("else_block",15, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 69: // else_block ::= 
-            { parser.Tree.reduce(0,"else_block",0);
+            {
               Object RESULT =null;
 		
-    appendMainBuffer(("br label %if.else." + loopCount), true);
-    appendMainBuffer(("if.else." + loopCount + ":"), true);
-
-    loopCount--;
-
+                        loopCount=loopList.pop();//restore it when statement is finished
+                        appendMainBuffer(("br label %if.else." + loopCount), true);
+                        appendMainBuffer(("if.else." + loopCount + ":"), true);   
+                    
               CUP$parser$result = parser.getSymbolFactory().newSymbol("else_block",15, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 70: // func_list ::= 
-            { parser.Tree.reduce(0,"func_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("func_list",18, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1873,7 +1868,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 71: // func_list ::= func_list function_decl 
-            { parser.Tree.reduce(2,"func_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("func_list",18, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1882,7 +1877,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 72: // NT$9 ::= 
-            { parser.Tree.reduce(0,"NT$9",0);
+            {
               Object RESULT =null;
  currentSymTable = new SymbolTable(currentSymTable); 
                               currentSymTable.currentBuffer=funcBuffer;
@@ -1894,7 +1889,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 73: // function_decl ::= FUNCTION NT$9 ID RO func_param_list RC stmt_list END 
-            { parser.Tree.reduce(8,"function_decl",0);
+            {
               Object RESULT =null;
               // propagate RESULT from NT$9
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-6)).value;
@@ -1905,7 +1900,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 74: // ret ::= RETURN exp 
-            { parser.Tree.reduce(2,"ret",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("ret",16, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1914,7 +1909,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 75: // print_func ::= PRINT RO print_func_args RC 
-            { parser.Tree.reduce(4,"print_func",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("print_func",23, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1923,7 +1918,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 76: // print_func_args ::= print_func_args CM STRING 
-            { parser.Tree.reduce(3,"print_func_args",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("print_func_args",17, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1932,7 +1927,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 77: // print_func_args ::= print_func_args CM exp 
-            { parser.Tree.reduce(3,"print_func_args",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("print_func_args",17, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1941,7 +1936,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 78: // print_func_args ::= STRING 
-            { parser.Tree.reduce(1,"print_func_args",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("print_func_args",17, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1950,7 +1945,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 79: // print_func_args ::= exp 
-            { parser.Tree.reduce(1,"print_func_args",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("print_func_args",17, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1959,7 +1954,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 80: // func_param_list ::= func_param_list CM exp 
-            { parser.Tree.reduce(3,"func_param_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("func_param_list",24, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1968,7 +1963,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 81: // func_param_list ::= exp 
-            { parser.Tree.reduce(1,"func_param_list",0);
+            {
               Object RESULT =null;
 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("func_param_list",24, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1977,7 +1972,7 @@ appendMainBuffer(("if.body." + loopCount + ":"), true);
 
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 82: // func_call ::= ID RO func_param_list RC 
-            { parser.Tree.reduce(4,"func_call",0);
+            {
               Object RESULT =null;
 		int nameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
 		int nameright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).right;

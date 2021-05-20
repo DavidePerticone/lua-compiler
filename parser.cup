@@ -16,7 +16,7 @@ import java.util.regex.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-
+import java.util.LinkedList;
 
 init with {:
    currentSymTable = new parser.SymbolTable(null); //Main symbol table for global variables included in all scopes
@@ -27,6 +27,7 @@ init with {:
    bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); //output file
    loopCount = 0;
    totLoopCount = 0;
+   loopList=new LinkedList<Integer>();
    /*Structure:
    Global buffer
    Function buffer
@@ -46,6 +47,7 @@ public StringBuffer mainBuffer;
 public BufferedWriter bwr;
 public int loopCount;
 public int totLoopCount;
+public LinkedList<Integer> loopList;
 
 public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
@@ -630,21 +632,22 @@ for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END
            ;
 
 //while loop        
-
+//problem with multiple loops/if in series. loopCount looses tracks. Should be diminished more
 while_loop ::= WHILE {:
-    loopCount = ++totLoopCount;
-    appendMainBuffer(("br label %for.cond." + loopCount), true);
-    appendMainBuffer(("for.cond." + loopCount + ":"), true);
-:} loop_cond:x {:
-    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
-:} DO {:
-    appendMainBuffer(("for.body." + loopCount + ":"), true);
-:} stmt_list END{:
-    appendMainBuffer(("br label %for.cond." + loopCount), true);
-    appendMainBuffer(("for.exit." + loopCount + ":"), true);
-
-    loopCount--;
-:};
+                        loopCount = ++totLoopCount;
+                        loopList.push(loopCount); //when entering a statement, save the loop number on the stack
+                        appendMainBuffer(("br label %for.cond." + loopCount), true);
+                        appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                    :} 
+                    loop_cond:x {:
+                        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                    :} DO {:
+                        appendMainBuffer(("for.body." + loopCount + ":"), true);
+                    :} stmt_list END{:
+                        loopCount=loopList.pop(); //restore it when statement is finished
+                        appendMainBuffer(("br label %for.cond." + loopCount), true);
+                        appendMainBuffer(("for.exit." + loopCount + ":"), true);
+                    :};
 
 
 //repeat-until loop
@@ -655,28 +658,29 @@ repeat_loop ::= REPEAT stmt_list UNTIL loop_cond ;
 
 //if instruction
 //TODO: IMPLEMENT LOCAL SCOPE
-if_block ::= IF  {: loopCount = ++totLoopCount; :} exp:x {:
-        
-        appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
-     
-        :}  THEN {:appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt_list  else_block END
+if_block ::= IF  {: 
+                    loopCount = ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
+                :} exp:x {:
+                    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
+                :}  THEN {:
+                    appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt_list  else_block END
+                
                 | IF error else_block END{: System.out.println("error");:};
 
 else_block ::= {: 
-    appendMainBuffer(("br label %if.exit." + loopCount), true);
-:} ELSE {: 
-    appendMainBuffer(("if.else." + loopCount + ":"), true); 
-:}stmt_list {:
-    appendMainBuffer(("br label %if.exit." + loopCount), true);
-    appendMainBuffer(("if.exit." + loopCount + ":"), true);
-
-    loopCount--;
-:}|{:
-    appendMainBuffer(("br label %if.else." + loopCount), true);
-    appendMainBuffer(("if.else." + loopCount + ":"), true);
-
-    loopCount--;
-:} ;
+                     appendMainBuffer(("br label %if.exit." + loopCount), true);
+                :} ELSE {: 
+                    appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                :}stmt_list {:
+                    loopList.push(loopCount);
+                    appendMainBuffer(("br label %if.exit." + loopCount), true);
+                    appendMainBuffer(("if.exit." + loopCount + ":"), true);
+                    :}|
+                    {:
+                        loopCount=loopList.pop();//restore it when statement is finished
+                        appendMainBuffer(("br label %if.else." + loopCount), true);
+                        appendMainBuffer(("if.else." + loopCount + ":"), true);   
+                    :} ;
 
 
 /*******************/
@@ -712,7 +716,6 @@ func_param_list ::= func_param_list CM exp
 
 
 func_call ::= ID:name RO  func_param_list RC;
-
 
 
 

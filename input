@@ -1,7 +1,24 @@
-a=0
-while a<5 do
-    if a == 2 then
-    a=a+1
+a=5
+while a==2 do
+if (a == 2) then
+
+    if (a == 2) then
+    
+        a=1
+            if (a == 2) then
+    
+        a=1
     end
-    a=a+1
+    end
+    
+    if (a == 2) then
+    
+        a=1
+    end
+
+
+
+a=0
+end
+
 end
