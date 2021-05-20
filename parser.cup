@@ -28,6 +28,9 @@ init with {:
    loopCount = 0;
    totLoopCount = 0;
    loopList=new LinkedList<Integer>();
+   indexString = 0;
+   stringList = new ArrayList<String>();
+   stringDecl = new StringBuffer();
    /*Structure:
    Global buffer
    Function buffer
@@ -48,6 +51,9 @@ public BufferedWriter bwr;
 public int loopCount;
 public int totLoopCount;
 public LinkedList<Integer> loopList;
+public int indexString;
+public ArrayList<String> stringList;
+StringBuffer stringDecl; 
 
 public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
@@ -59,6 +65,7 @@ public class SymbolTable{
         public Integer registerCount; //used as counter for SSA registers
         SymbolTable prev;
         StringBuffer currentBuffer;
+        
         
         public SymbolTable(SymbolTable p){
             this.varTable = new HashMap<String, ValueObj>();
@@ -122,6 +129,8 @@ public class ValueObj {
   
  
     }
+
+   
 
 
 :};
@@ -222,7 +231,7 @@ action code {:
 
     }
 
-     public void initVar(ValueObj n, ValueObj x){
+     public ValueObj initVar(ValueObj n, ValueObj x){
 
                         String op1, op2;
 
@@ -261,6 +270,8 @@ action code {:
                             appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true);
                             }
                         }
+
+                        return n;
     }
 
     public ValueObj operationOld(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
@@ -422,7 +433,31 @@ action code {:
                     
                     return RESULT;
 
-    }                
+    }   
+
+     public int genLabelString(){
+    return indexString++;
+    }
+
+    private void printStrings(){
+
+        
+        
+        stringDecl.append("declare i32 @printf(i8*, ...)\n"); //declare printf instruction
+        System.out.println(stringList.size());
+        for (int i = 0; i < stringList.size(); i++){
+            
+            String s = stringList.get(i);
+            s = s.substring(1, s.length() - 1);
+            int length = s.length();
+            if (!s.contains("\\n"))
+                length++;
+            s = s.replace("\\n", "\\0A");
+            s = s + "\\00";
+            stringDecl.append("@.str." + i + " = private constant [" + length + " x i8] c\"" + s + "\", align 1\n");
+        }
+        
+    }                 
     
 :}
 
@@ -433,18 +468,18 @@ action code {:
 terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, NOT, SO, SC, EQ, NOTEQ;
 terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
 terminal DO, FOR, IF, ELSE, THEN, END, LOCAL;
-terminal  STRING, NIL;
+terminal  NIL;
 terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
-terminal String ID;
+terminal String ID, STRING;
 terminal Double NUMBER;
 //Non terminal tokens
 non terminal global_var_init, local_var, block, array_dec;
 non terminal  local_var_init, local_var_list, var_list, ass_list;
-non terminal for_loop, stmt_list, stmt,  assignment;
+non terminal for_loop, stmt_list, stmt;
 non terminal while_loop, repeat_loop, if_block, else_block, ret;
 non terminal print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, func_param_list, func_call, declaration;
 non terminal ValueObj var;
-non terminal ValueObj ass_exp, loop_cond, exp;
+non terminal ValueObj ass_exp, loop_cond, exp, assignment;
 
 //Precedences
 precedence left OR;
@@ -463,10 +498,13 @@ start with prog;
 
 
 prog ::= func_list {:
-
+        
+       
        bwr.write(funcBuffer.toString());
 
 :}  stmt_list  {:
+        printStrings();
+       bwr.write(stringDecl.toString());
 		 bwr.write(globalDecBuffer.toString());
 	    bwr.write("define void @main(){\n");
         bwr.write(mainBuffer.toString());
@@ -582,7 +620,7 @@ global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate 
                                             :};
 
 //simple assignemtn
-assignment ::= var:n EQ ass_exp:x {:initVar(n, x);:};
+assignment ::= var:n EQ ass_exp:x {: RESULT = initVar(n, x);:};
 
 
 
@@ -628,7 +666,32 @@ loop_cond ::=  exp:x {: RESULT=x; :} ;
 
 //loop 
 
-for_loop ::= FOR assignment CM loop_cond CM loop_cond DO stmt_list END 
+for_loop ::= FOR assignment:n {:
+                            loopCount = ++totLoopCount;
+                            loopList.push(loopCount);    
+                            appendMainBuffer(("br label %for.cond." + loopCount), true);
+                            appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                            :}CM loop_cond:x {: //what to allow?
+                            appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                            :}CM {:
+                            appendMainBuffer(("for.inc." + loopCount + ":"), true);
+                            :}exp:y {:
+                            ValueObj tmp=operation("fadd", n, y);
+                            initVar(n, tmp);
+                            appendMainBuffer(("br label %for.cond." + loopCount), true);
+                            appendMainBuffer(("for.body." + loopCount + ":"), true);
+                            
+                            //need to increase the variable in the assignement 1. modify initVar to return the var to assignemnt 2.
+                            // 2. retrieve it from the stack
+                            // 3. generate statement
+                            
+                            :}DO stmt_list END {:
+                            loopCount=loopList.pop(); //restore it when statement is finished
+                            appendMainBuffer(("br label %for.inc." + loopCount), true);
+                            appendMainBuffer(("for.exit." + loopCount + ":"), true);
+
+                            
+                            :}
            ;
 
 //while loop        
@@ -704,12 +767,31 @@ ret ::= RETURN exp;
         //| RETURN;
 
 
-print_func ::= PRINT RO print_func_args RC ;
+
+
+
+print_func ::=  PRINT RO STRING:value RC {: 
+    int label = genLabelString();
+    
+    String s = value;
+    s = s.substring(1, s.length() - 1);
+    int length = s.length();
+    if (!s.contains("\\n"))
+    length++;
+    s = s.replace("\\n", "\\0A");
+    s = s + "\\00";
+    
+    appendMainBuffer(("%" + getRegister() + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + length + " x i8], [" + length + " x i8]* @.str." + label + ", i32 0, i32 0))"), true);
+    stringList.add(value);
+   
+    
+:};
+//|PRINT RO print_func_args RC ;
                 
                 
 
 
-print_func_args ::= print_func_args CM STRING | print_func_args CM exp |  STRING | exp ;
+//print_func_args ::= print_func_args CM STRING | print_func_args CM exp |  STRING | exp ;
 
 func_param_list ::= func_param_list CM exp 
                     | exp   ;
