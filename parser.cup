@@ -222,54 +222,6 @@ action code {:
 
     }
 
-   /* public String loadLLVM2(String outName, String firstOp, String SecondOp, String align){
-        // %2 = load double, double* @b, align 8
-
-        return outName+" = " + "load " + firstOp+", "+inputType+"* "+inputName+", "+"align "+align;
-
-    }*/
-
-    public void initVarOld(ValueObj n, ValueObj x){
-                                    //if the variable has never been used before, it means that must be declared
-                        if(n.type == null && x.type == Type.IMMEDIATE){ //if the value to which initiliaze is an immediate
-                            
-                            n.setDouble(); //set type number in the variable
-                            n.setGlobal();
-                            //@X = global i32 17
-                            //createGlovalVarLLVM(String name, String type, String value){
-                            System.out.println(createGlovalVarLLVM(n.name, "double", ""+x.value));
-                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+x.value), true); //append to the Global declaration buffer
-
-                        }else if(n.type == Type.NUMBER && x.type == Type.IMMEDIATE){ //if type is not null, it has been already declared and must be loaded with a new value
-                                //store double 6.000000e+00, double* @a, align 8
-                               
-                                
-                                 appendMainBuffer( storeLLVM(""+x.value, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                        }else if(n.type == null && x.type == Type.NUMBER){ //if new var is undeclared and we initialize with a variable already declared
-                                 n.setDouble(); //set type number in the variable
-                                 n.setGlobal();
-                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                                //(String outName, String outType, String inputType, String inputName, String align )
-                                String reg = getRegister(); //get a new register
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true); //save the value of the var into the register
-                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
-                        }else if(n.type == Type.NUMBER && x.type == Type.NUMBER){ //if both var have already been declared and we want to assigne one to the other
-                                  String reg = getRegister();
-                                 appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                 appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
-                        }else if(n.type == Type.NUMBER && x.type == Type.RNUM){ //if var already declared and RHS is a register containing a num
-                            appendMainBuffer(storeLLVM("%"+x.name, "double", n.scope+n.name, "double", "8"), true); 
-
-                        }else if(n.type == null && x.type == Type.RNUM){ //if var already declared and RHS is a register containing a num
-                            n.setDouble(); //set type number in the variable
-                            n.setGlobal();
-                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                            appendMainBuffer(storeLLVM("%"+x.name, "double", n.scope+n.name, "double", "8"), true); 
-
-                        }
-
-
-    }
 
     public ValueObj initLocalVar(ValueObj n, ValueObj x){
 
@@ -371,86 +323,7 @@ action code {:
                         return n;
     }
 
-    public ValueObj operationOld(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
-                            ValueObj RESULT=null; //final result to return
-                            String a; //variables for registers
-                            String b;
-                            String r;
-                            if( x.type==Type.NUMBER && y.type==Type.NUMBER){ //if both operands are variables
-                                a=getRegister(); //we nned three register
-                                b=getRegister();
-                                r=getRegister();
-                                appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true); //load value of first
-                                appendMainBuffer(loadLLVM("%"+b, "double", "double", y.scope+y.name, "8" ), true); //load value of second
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+a+", %"+b, true); //perform operation and save in register
-                                RESULT=new ValueObj(r); //the returning value is a register containing a number, so we set the name as the number of the register
-                                RESULT.setLocal();
-                                RESULT.setRNUM(); //we set the type as RNUM because it is a number into a register
-                            }else if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
-                                ///create switch
-                                if(operation.compareTo("fadd")==0)
-                                    RESULT=new ValueObj(x.value+y.value);
-                                else if(operation.compareTo("fsub")==0)
-                                    RESULT=new ValueObj(x.value-y.value);
-                                else if(operation.compareTo("fmul")==0)
-                                    RESULT=new ValueObj(x.value*y.value);
-                                else if(operation.compareTo("fdiv")==0)
-                                    RESULT=new ValueObj(x.value/y.value);
-                                RESULT.type=Type.IMMEDIATE; //the returning value is itself and integer
-                            }else if((x.type==Type.IMMEDIATE || x.type==Type.RNUM) && y.type==Type.NUMBER ){ //if one is an (immedaite or RNUM) and the other a var
-                                a=getRegister(); 
-                                r=getRegister();
-                                if(x.type==Type.RNUM){ //if it is a RNUM it is enough to set the name to the register name with %
-                                    x.name="%"+x.name;
-                                }else{
-                                     
-                                    x.name=""+x.value; //else just use the plain value
-                                     
-                                }
-                                appendMainBuffer(loadLLVM("%"+a, "double", "double", y.scope+y.name, "8"), true);
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+x.name+", %"+a, true);
-                                RESULT=new ValueObj(r);
-                               RESULT.setLocal();
-                                 RESULT.setRNUM();
-                            }else if((y.type==Type.IMMEDIATE || y.type==Type.RNUM) && x.type==Type.NUMBER){
-                                 a=getRegister();
-                                 r=getRegister();
-                                 if(y.type==Type.RNUM){
-                                    y.name="%"+y.name;
-                                }else{
-                                     
-                                   y.name=""+y.value;
-                                     
-                                }
-                                appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true);
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+y.name+", %"+a, true);
-                                RESULT=new ValueObj(r);
-                                RESULT.setLocal();
-                                RESULT.setRNUM();
-                            }else if(x.type==Type.RNUM && y.type==Type.RNUM ){ //if both operands are register contaning values
-                                r=getRegister(); //create return register
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+x.name+", %"+y.name, true); //simply perform the operation
-                                RESULT=new ValueObj(r);
-                                RESULT.setLocal();
-                                RESULT.setRNUM();//set result to RNUM
-                            }else if(x.type==Type.RNUM && y.type==Type.IMMEDIATE){
-                                r=getRegister(); //create return register
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+x.name+", "+y.value, true); //simply perform the operation
-                                RESULT=new ValueObj(r);
-                                RESULT.setLocal();
-                                RESULT.setRNUM();//set result to RNUM
-
-                            }else if(x.type==Type.IMMEDIATE && y.type==Type.RNUM){
-                                r=getRegister(); //create return register
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+"%"+y.name+", "+x.value, true); //simply perform the operation
-                                RESULT=new ValueObj(r);
-                                RESULT.setLocal();
-                                RESULT.setRNUM();//set result to RNUM
-
-                            }
-                            return RESULT;
-                           
-    }
+    
 
      public ValueObj operation(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
                             ValueObj RESULT=null; //final result to return
@@ -603,16 +476,11 @@ precedence right HAT;
 start with prog;
 
 
-prog ::= func_list {:
-        
-       
-       
-
-:}  stmt_list  {:
+prog ::= stmt_list  {:
         printStrings();
-       bwr.write(stringDecl.toString()+"\n");
-		 bwr.write(globalDecBuffer.toString()+"\n");
-         bwr.write(funcBuffer.toString()+"\n");
+        bwr.write(stringDecl.toString()+"\n");
+		bwr.write(globalDecBuffer.toString()+"\n");
+        bwr.write(funcBuffer.toString()+"\n");
 	    bwr.write("define void @main(){\n");
         bwr.write(mainBuffer.toString());
 	
@@ -643,7 +511,7 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment |
 
 stmt_list ::= stmt_list stmt | stmt ;
 
-stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block;
+stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block | function_decl;
 
 
 /* expressions: 
@@ -1091,7 +959,11 @@ ret ::= RETURN exp:x {:
                             appendMainBuffer("ret double " + x.scope+x.name, true);  //use directly the regitter
                              getRegister();
                         }
-        :};
+                        :};
+
+
+
+
 
 
 
@@ -1112,16 +984,54 @@ print_func ::=  PRINT RO STRING:value RC {:
     stringList.add(value);
    
     
-:};
-//|PRINT RO print_func_args RC ;
+                :} |PRINT RO STRING:value CM {: RESULT = new ArrayList<ValueObj>(); :} //to print c like printf
+                      func_param_list:x RC {:
+                                    ArrayList<ValueObj> paramsList = (ArrayList<ValueObj>) x; //list of parameters to print
+
+                                    int label = genLabelString(); //save the string format
+    
+                                    String s = value;
+                                    s = s.substring(1, s.length() - 1);
+                                    int length = s.length();
+                                    if (!s.contains("\\n"))
+                                    length++;
+                                    s = s.replace("\\n", "\\0A");
+                                    s = s + "\\00";
+                                    //use a temporary buffer so that we can load elements from memory before writing the print
+                                    StringBuffer printBuffer = new StringBuffer();
+                                    //do not specify the register output because we need to put it after loading eventually var of type NUMBER
+                                    printBuffer.append(" = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + length + " x i8], [" + length + " x i8]* @.str." + label + ", i32 0, i32 0), ");
+                                    stringList.add(value);
+
+                                    
+
+   
+                                                for (int i = 0; i < paramsList.size(); i++){
+                                                            ValueObj param = x.get(i);                                                
+                                                    if(param.type==Type.IMMEDIATE){ //if it is an immediate
+                                                        printBuffer.append("double "+param.value); //just append the value
+                                                    }else if(param.type==Type.RNUM){ //if it is a register number
+                                                        printBuffer.append("double %"+param.name); //append the register
+                                                    }else if(param.type==Type.NUMBER){ //if it is a number
+                                                        String reg1 = getRegister(); //load the register
+                                                        appendMainBuffer(loadLLVM("%"+reg1, "double", "double", param.scope+param.name, "8"), true);
+                                                         printBuffer.append("double %"+reg1); //and attach theregister
+                                                    }
+                                                    if(i!=paramsList.size()-1){
+                                                        printBuffer.append(", ");
+                                                    }
+                                                    
+                                                }
+                                                        //"%" + getRegister() + 
+                                                        printBuffer.append((")")); //close the printf func
+                                                        printBuffer.reverse(); //this is a trick to append at the beginning instead of at the end
+                                                        printBuffer.append(new StringBuffer("%" + getRegister()).reverse());
+                                                        printBuffer.reverse();
+                                                        appendMainBuffer(printBuffer.toString(), true);
+                                                    :};
+
+
                 
-                
-
-
-//print_func_args ::= print_func_args CM STRING | print_func_args CM exp |  STRING | exp ;
-
-
-
 func_param_list ::= func_param_list:x CM exp:y {: RESULT=x;
                                                     x.add(y);  :} 
                     | exp:y {: RESULT= new ArrayList<ValueObj>();
