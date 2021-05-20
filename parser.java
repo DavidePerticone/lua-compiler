@@ -581,6 +581,7 @@ public class parser extends java_cup.runtime.lr_parser {
    indexString = 0;
    stringList = new ArrayList<String>();
    stringDecl = new StringBuffer();
+   funcTable = new HashMap<String, FuncObj>();
    /*Structure:
    Global buffer
    Function buffer
@@ -603,7 +604,9 @@ public int totLoopCount;
 public LinkedList<Integer> loopList;
 public int indexString;
 public ArrayList<String> stringList;
-StringBuffer stringDecl; 
+public StringBuffer stringDecl; 
+public HashMap<String, FuncObj> funcTable;
+
 
 public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
@@ -2361,9 +2364,13 @@ class CUP$parser$actions {
 		int fNameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
 		int fNameright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).right;
 		String fName = (String)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
- 
 
+
+                    if(funcTable.containsKey(fName)){
+                        System.out.println("FUNCTION ALREADY DECLARED");
+                    }
                     FuncObj func = new FuncObj(fName); //create new funct object
+                    funcTable.put(fName, func);
                     func.nargsTot=currentSymTable.varList.size(); //set number of param in the function
 
                     appendMainBuffer(("define double @" + fName + "("), false); //definition of function
@@ -2502,11 +2509,44 @@ class CUP$parser$actions {
           case 88: // func_call ::= ID RO func_param_list RC 
             {
               Object RESULT =null;
-		int nameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
-		int nameright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).right;
-		String name = (String)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
+		int fNameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
+		int fNameright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).right;
+		String fName = (String)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
+		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).left;
+		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).right;
+		ArrayList<ValueObj> x = (ArrayList<ValueObj>)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		
+
+                                                if(!funcTable.containsKey(fName)){
+                                                    System.out.println("ERROR FUNCTION NOT DECLARED");
+                                                }
+                                                FuncObj func = funcTable.get(fName);
+                                                if(func.nargsTot != x.size()){
+                                                     System.out.println("WRONG NUMBER OF PARAMETERS IN FUNCTION "+fName);
+                                                }
+                                                
+                                                StringBuffer parameters = new StringBuffer();
+                                                for(int i = 0; i<func.nargsTot; i++){
+                                                    ValueObj param = x.get(i);
+                                                    System.out.println("TYPE::"+param.type);
+                                                    if(param.type==Type.IMMEDIATE){
+                                                        parameters.append("double "+param.value);
+                                                    }else if(param.type==Type.RNUM){
+                                                        parameters.append("double %"+param.name);
+                                                    }else if(param.type==Type.NUMBER){
+                                                        String reg1 = getRegister();
+                                                        //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
+                                                        appendMainBuffer(loadLLVM("%"+reg1, "double", "double", param.scope+param.name, "8"), true);
+                                                        parameters.append("double %"+reg1);
+                                                    }
+                                                    if(i!=func.nargsTot-1){
+                                                        parameters.append(", ");
+                                                    }
+                
+
+                                                }
                                                 String reg=getRegister();
+                                                appendMainBuffer("%"+reg+" = call double @"+fName+"("+parameters.toString()+")", true);
                                             //%1 = call i32 @test(i32 %0):
 
                                         

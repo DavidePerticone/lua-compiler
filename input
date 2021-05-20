@@ -8,9 +8,5 @@ a=2
 return a*a
 end
 
-a=2
-if a then
-local c=5
-end
-
-b=c
+a=5
+prova(a, 2*a)

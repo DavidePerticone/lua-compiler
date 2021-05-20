@@ -31,6 +31,7 @@ init with {:
    indexString = 0;
    stringList = new ArrayList<String>();
    stringDecl = new StringBuffer();
+   funcTable = new HashMap<String, FuncObj>();
    /*Structure:
    Global buffer
    Function buffer
@@ -53,7 +54,9 @@ public int totLoopCount;
 public LinkedList<Integer> loopList;
 public int indexString;
 public ArrayList<String> stringList;
-StringBuffer stringDecl; 
+public StringBuffer stringDecl; 
+public HashMap<String, FuncObj> funcTable;
+
 
 public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
@@ -1032,9 +1035,13 @@ func_list ::= | func_list function_decl;
 function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable, true); //use new symbol table
                               currentSymTable.currentBuffer=funcBuffer; //set buffer to func buffer
 
-                 :}ID:fName RO func_decl_param RC {: 
+                 :}ID:fName RO func_decl_param RC {:
 
+                    if(funcTable.containsKey(fName)){
+                        System.out.println("FUNCTION ALREADY DECLARED");
+                    }
                     FuncObj func = new FuncObj(fName); //create new funct object
+                    funcTable.put(fName, func);
                     func.nargsTot=currentSymTable.varList.size(); //set number of param in the function
 
                     appendMainBuffer(("define double @" + fName + "("), false); //definition of function
@@ -1122,8 +1129,36 @@ func_param_list ::= func_param_list:x CM exp:y {: RESULT=x;
                                 :}  ;
 
 
-func_call ::= ID:name RO  func_param_list RC {:
+func_call ::= ID:fName RO  func_param_list:x RC {: //function invocation
+                                                            //TO CCOMMMMEEENTTT
+                                                if(!funcTable.containsKey(fName)){ //if function is not declared
+                                                    System.out.println("ERROR FUNCTION NOT DECLARED");
+                                                }
+                                                FuncObj func = funcTable.get(fName);
+                                                if(func.nargsTot != x.size()){ //if parameters passed do not coincide with declaration
+                                                     System.out.println("WRONG NUMBER OF PARAMETERS IN FUNCTION "+fName);
+                                                }
+                                                
+                                                StringBuffer parameters = new StringBuffer();
+                                                for(int i = 0; i<func.nargsTot; i++){ //loop through the parameters 
+                                                    ValueObj param = x.get(i);                                                
+                                                    if(param.type==Type.IMMEDIATE){ //if it is an immediate
+                                                        parameters.append("double "+param.value); //just append the value
+                                                    }else if(param.type==Type.RNUM){ //if it is a register number
+                                                        parameters.append("double %"+param.name); //append the register
+                                                    }else if(param.type==Type.NUMBER){ //if it is a number
+                                                        String reg1 = getRegister(); //load the register
+                                                        appendMainBuffer(loadLLVM("%"+reg1, "double", "double", param.scope+param.name, "8"), true);
+                                                        parameters.append("double %"+reg1); //and attach theregister
+                                                    }
+                                                    if(i!=func.nargsTot-1){
+                                                        parameters.append(", ");
+                                                    }
+                
+
+                                                }
                                                 String reg=getRegister();
+                                                appendMainBuffer("%"+reg+" = call double @"+fName+"("+parameters.toString()+")", true); //call the function
                                             //%1 = call i32 @test(i32 %0):
 
                                         :};
