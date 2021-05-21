@@ -31,11 +31,11 @@ id = [A-Za-z_][A-Za-z0-9_]*
 number = ([1-9][0-9]*|0) | (([0-9]+\.[0-9]*) | ([0-9]*\.[0-9]+)) (e|E('+'|'-')?[0-9]+)?
 string = \"~\"
 nl = \r|\n|\r\n|" "
-
+comment = "--"~{nl}|"--[["~"--]]"
 %%
 
 
-
+"string.format" {return symbol(sym.STRFRT);}
 "do"       {return symbol(sym.DO);}
 "for"      {return symbol(sym.FOR);}
 "if"       {return symbol(sym.IF);}
@@ -43,17 +43,7 @@ nl = \r|\n|\r\n|" "
 
 "end"      {return symbol(sym.END);}
 "local"    {return symbol(sym.LOCAL);}
-/*
 
-"in"    {return symbol(sym.IN);}
-
-
-
-
-
-
-
-*/
 "nil"    {return symbol(sym.NIL);}
 "print"     {return symbol(sym.PRINT);}
 "return"    {return symbol(sym.RETURN);}

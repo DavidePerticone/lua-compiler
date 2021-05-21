@@ -1,13 +1,19 @@
+
 stack={0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 size=10
 full=0
 
+
+
+
+
 function signalTOS(pos, sim)
 
     local i=0
+    size=9
     print("\n")
     while(i<pos) do
-        local j=0;
+        local j=0
 
         
         i=i+1
@@ -27,8 +33,8 @@ function signalTOS(pos, sim)
 
     end
 
-
-    return 0 
+ 
+    return 1
 end
 
 function printStack()
@@ -42,7 +48,7 @@ function printStack()
     print("---------------------")
     print("\n ")
     repeat
-        print("%.0f ", stack[i])
+        print(string.format("%.0f ", stack[i]))
         i=i+1
     until(i<full)
     print("\n ")
@@ -79,6 +85,8 @@ function popStack()
 
 end
 
+
+
 pushStack(1)
 pushStack(2)
 pushStack(3)
@@ -88,6 +96,8 @@ pushStack(4)
 
 printStack()
 
-popStack()
+a=popStack()
+print(string.format("POPPED VALUE: %.0f\n", a))
 
+print(2^a)
 printStack()

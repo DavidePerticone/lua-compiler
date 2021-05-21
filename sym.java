@@ -6,10 +6,10 @@
 /** CUP generated class containing symbol constants. */
 public class sym {
   /* terminals */
-  public static final int FUNCTION = 35;
+  public static final int FUNCTION = 36;
   public static final int SO = 10;
   public static final int MAJ = 4;
-  public static final int REPEAT = 33;
+  public static final int REPEAT = 34;
   public static final int SC = 11;
   public static final int FOR = 25;
   public static final int MINUS = 19;
@@ -21,30 +21,31 @@ public class sym {
   public static final int NIL = 31;
   public static final int OR = 8;
   public static final int DIV = 21;
-  public static final int UNTIL = 34;
+  public static final int UNTIL = 35;
   public static final int RO = 14;
   public static final int MIN_EQ = 5;
   public static final int PLUS = 18;
   public static final int MIN = 2;
   public static final int IF = 26;
-  public static final int ID = 38;
+  public static final int ID = 39;
   public static final int EOF = 0;
-  public static final int RETURN = 36;
+  public static final int RETURN = 37;
   public static final int error = 1;
   public static final int RC = 15;
   public static final int HAT = 22;
-  public static final int NUMBER = 40;
+  public static final int NUMBER = 41;
   public static final int BO = 16;
   public static final int EQ = 12;
   public static final int ELSE = 27;
   public static final int BC = 17;
-  public static final int WHILE = 32;
+  public static final int STRFRT = 32;
+  public static final int WHILE = 33;
   public static final int THEN = 28;
   public static final int END = 29;
-  public static final int STRING = 39;
+  public static final int STRING = 40;
   public static final int LOCAL = 30;
   public static final int MAJ_EQ = 6;
-  public static final int PRINT = 37;
+  public static final int PRINT = 38;
   public static final int DO = 24;
   public static final int NOTEQ = 13;
   public static final String[] terminalNames = new String[] {
@@ -80,6 +81,7 @@ public class sym {
   "END",
   "LOCAL",
   "NIL",
+  "STRFRT",
   "WHILE",
   "REPEAT",
   "UNTIL",
