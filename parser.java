@@ -38,7 +38,7 @@ public class parser extends java_cup.runtime.lr_parser {
   /** Production table. */
   protected static final short _production_table[][] = 
     unpackFromStrings(new String[] {
-    "\000\133\000\002\002\004\000\002\026\003\000\002\033" +
+    "\000\135\000\002\002\004\000\002\026\003\000\002\033" +
     "\003\000\002\033\003\000\002\033\003\000\002\033\003" +
     "\000\002\033\003\000\002\013\004\000\002\013\003\000" +
     "\002\014\003\000\002\014\003\000\002\014\003\000\002" +
@@ -60,13 +60,13 @@ public class parser extends java_cup.runtime.lr_parser {
     "\002\050\002\000\002\051\002\000\002\015\012\000\002" +
     "\052\002\000\002\053\002\000\002\054\002\000\002\016" +
     "\011\000\002\055\002\000\002\056\002\000\002\057\002" +
-    "\000\002\017\013\000\002\017\006\000\002\060\002\000" +
-    "\002\061\002\000\002\020\006\000\002\020\002\000\002" +
-    "\022\003\000\002\022\002\000\002\024\002\000\002\024" +
-    "\004\000\002\062\002\000\002\063\002\000\002\030\013" +
-    "\000\002\021\004\000\002\031\006\000\002\064\002\000" +
-    "\002\031\011\000\002\041\005\000\002\041\003\000\002" +
-    "\032\006" });
+    "\000\002\060\002\000\002\017\014\000\002\017\006\000" +
+    "\002\061\002\000\002\062\002\000\002\020\006\000\002" +
+    "\020\002\000\002\022\003\000\002\022\002\000\002\024" +
+    "\002\000\002\024\004\000\002\063\002\000\002\064\002" +
+    "\000\002\030\013\000\002\021\004\000\002\031\006\000" +
+    "\002\065\002\000\002\031\011\000\002\041\005\000\002" +
+    "\041\003\000\002\041\002\000\002\032\006" });
 
   /** Access to production table. */
   public short[][] production_table() {return _production_table;}
@@ -74,7 +74,7 @@ public class parser extends java_cup.runtime.lr_parser {
   /** Parse-action table. */
   protected static final short[][] _action_table = 
     unpackFromStrings(new String[] {
-    "\000\243\000\026\032\023\033\034\034\017\040\013\042" +
+    "\000\244\000\026\032\023\033\034\034\017\040\013\042" +
     "\011\043\036\045\016\046\014\047\027\050\021\001\002" +
     "\000\036\002\ufff4\032\ufff4\033\ufff4\034\ufff4\035\ufff4\037" +
     "\ufff4\040\ufff4\042\ufff4\043\ufff4\044\ufff4\045\ufff4\046\ufff4" +
@@ -86,13 +86,13 @@ public class parser extends java_cup.runtime.lr_parser {
     "\ufff6\050\ufff6\001\002\000\036\002\uffff\032\uffff\033\uffff" +
     "\034\uffff\035\uffff\037\uffff\040\uffff\042\uffff\043\uffff\044" +
     "\uffff\045\uffff\046\uffff\047\uffff\050\uffff\001\002\000\006" +
-    "\016\244\031\226\001\002\000\016\013\uffc5\020\uffc5\025" +
+    "\016\245\031\227\001\002\000\016\013\uffc5\020\uffc5\025" +
     "\uffc5\041\uffc5\050\uffc5\052\uffc5\001\002\000\040\002\ufffe" +
-    "\016\233\032\ufffe\033\ufffe\034\ufffe\035\ufffe\037\ufffe\040" +
+    "\016\234\032\ufffe\033\ufffe\034\ufffe\035\ufffe\037\ufffe\040" +
     "\ufffe\042\ufffe\043\ufffe\044\ufffe\045\ufffe\046\ufffe\047\ufffe" +
     "\050\ufffe\001\002\000\004\050\122\001\002\000\016\013" +
     "\057\020\050\025\051\041\052\050\021\052\053\001\002" +
-    "\000\004\002\230\001\002\000\004\050\uffb0\001\002\000" +
+    "\000\004\002\231\001\002\000\004\050\uffaf\001\002\000" +
     "\020\003\175\013\uffbd\020\uffbd\025\uffbd\041\uffbd\050\uffbd" +
     "\052\uffbd\001\002\000\036\002\ufff0\032\ufff0\033\ufff0\034" +
     "\ufff0\035\ufff0\037\ufff0\040\ufff0\042\ufff0\043\ufff0\044\ufff0" +
@@ -332,98 +332,100 @@ public class parser extends java_cup.runtime.lr_parser {
     "\uffd9\032\uffd9\033\uffd9\034\uffd9\035\uffd9\037\uffd9\040\uffd9" +
     "\042\uffd9\043\uffd9\044\uffd9\045\uffd9\046\uffd9\047\uffd9\050" +
     "\uffd9\001\002\000\004\051\156\001\002\000\006\021\160" +
-    "\031\157\001\002\000\016\013\uffab\020\uffab\025\uffab\041" +
-    "\uffab\050\uffab\052\uffab\001\002\000\036\002\uffac\032\uffac" +
-    "\033\uffac\034\uffac\035\uffac\037\uffac\040\uffac\042\uffac\043" +
-    "\uffac\044\uffac\045\uffac\046\uffac\047\uffac\050\uffac\001\002" +
-    "\000\016\013\057\020\050\025\051\041\052\050\021\052" +
-    "\053\001\002\000\006\021\165\031\164\001\002\000\040" +
-    "\004\075\006\074\007\064\010\073\011\063\012\076\016" +
-    "\071\017\065\021\uffa8\024\070\025\062\026\067\027\072" +
-    "\030\066\031\uffa8\001\002\000\016\013\057\020\050\025" +
-    "\051\041\052\050\021\052\053\001\002\000\036\002\uffaa" +
-    "\032\uffaa\033\uffaa\034\uffaa\035\uffaa\037\uffaa\040\uffaa\042" +
-    "\uffaa\043\uffaa\044\uffaa\045\uffaa\046\uffaa\047\uffaa\050\uffaa" +
-    "\001\002\000\040\004\075\006\074\007\064\010\073\011" +
-    "\063\012\076\016\071\017\065\021\uffa9\024\070\025\062" +
-    "\026\067\027\072\030\066\031\uffa9\001\002\000\026\032" +
-    "\023\033\034\034\017\040\013\042\011\043\036\045\016" +
-    "\046\014\047\027\050\021\001\002\000\030\032\023\033" +
-    "\034\034\017\037\171\040\013\042\011\043\036\045\016" +
-    "\046\014\047\027\050\021\001\002\000\036\002\uffcc\032" +
-    "\uffcc\033\uffcc\034\uffcc\035\uffcc\037\uffcc\040\uffcc\042\uffcc" +
-    "\043\uffcc\044\uffcc\045\uffcc\046\uffcc\047\uffcc\050\uffcc\001" +
+    "\031\157\001\002\000\022\013\uffaa\020\uffaa\021\uffaa\025" +
+    "\uffaa\031\uffaa\041\uffaa\050\uffaa\052\uffaa\001\002\000\036" +
+    "\002\uffab\032\uffab\033\uffab\034\uffab\035\uffab\037\uffab\040" +
+    "\uffab\042\uffab\043\uffab\044\uffab\045\uffab\046\uffab\047\uffab" +
+    "\050\uffab\001\002\000\022\013\057\020\050\021\uffa6\025" +
+    "\051\031\uffa6\041\052\050\021\052\053\001\002\000\006" +
+    "\021\165\031\164\001\002\000\040\004\075\006\074\007" +
+    "\064\010\073\011\063\012\076\016\071\017\065\021\uffa7" +
+    "\024\070\025\062\026\067\027\072\030\066\031\uffa7\001" +
     "\002\000\016\013\057\020\050\025\051\041\052\050\021" +
-    "\052\053\001\002\000\006\021\174\031\164\001\002\000" +
-    "\102\002\uffa7\004\uffa7\006\uffa7\007\uffa7\010\uffa7\011\uffa7" +
-    "\012\uffa7\015\uffa7\016\uffa7\017\uffa7\021\uffa7\023\uffa7\024" +
-    "\uffa7\025\uffa7\026\uffa7\027\uffa7\030\uffa7\031\uffa7\032\uffa7" +
-    "\033\uffa7\034\uffa7\035\uffa7\036\uffa7\037\uffa7\040\uffa7\042" +
-    "\uffa7\043\uffa7\044\uffa7\045\uffa7\046\uffa7\047\uffa7\050\uffa7" +
-    "\001\002\000\006\035\uffb8\037\uffb5\001\002\000\016\013" +
-    "\057\020\050\025\051\041\052\050\021\052\053\001\002" +
-    "\000\004\036\uffbc\001\002\000\004\036\201\001\002\000" +
-    "\026\032\uffbb\033\uffbb\034\uffbb\040\uffbb\042\uffbb\043\uffbb" +
-    "\045\uffbb\046\uffbb\047\uffbb\050\uffbb\001\002\000\026\032" +
-    "\023\033\034\034\017\040\013\042\011\043\036\045\016" +
-    "\046\014\047\027\050\021\001\002\000\032\032\023\033" +
-    "\034\034\017\035\uffb8\037\uffb5\040\013\042\011\043\036" +
-    "\045\016\046\014\047\027\050\021\001\002\000\004\037" +
-    "\211\001\002\000\004\035\206\001\002\000\026\032\uffb7" +
-    "\033\uffb7\034\uffb7\040\uffb7\042\uffb7\043\uffb7\045\uffb7\046" +
-    "\uffb7\047\uffb7\050\uffb7\001\002\000\026\032\023\033\034" +
-    "\034\017\040\013\042\011\043\036\045\016\046\014\047" +
-    "\027\050\021\001\002\000\030\032\023\033\034\034\017" +
-    "\037\uffb6\040\013\042\011\043\036\045\016\046\014\047" +
-    "\027\050\021\001\002\000\036\002\uffba\032\uffba\033\uffba" +
-    "\034\uffba\035\uffba\037\uffba\040\uffba\042\uffba\043\uffba\044" +
-    "\uffba\045\uffba\046\uffba\047\uffba\050\uffba\001\002\000\004" +
-    "\037\213\001\002\000\036\002\uffb9\032\uffb9\033\uffb9\034" +
-    "\uffb9\035\uffb9\037\uffb9\040\uffb9\042\uffb9\043\uffb9\044\uffb9" +
-    "\045\uffb9\046\uffb9\047\uffb9\050\uffb9\001\002\000\004\050" +
-    "\215\001\002\000\004\020\216\001\002\000\006\021\uffb3" +
-    "\050\122\001\002\000\006\021\uffb4\031\226\001\002\000" +
-    "\044\002\uffd0\016\uffd0\021\uffd0\031\uffd0\032\uffd0\033\uffd0" +
-    "\034\uffd0\035\uffd0\037\uffd0\040\uffd0\042\uffd0\043\uffd0\044" +
-    "\uffd0\045\uffd0\046\uffd0\047\uffd0\050\uffd0\001\002\000\004" +
-    "\021\222\001\002\000\026\032\uffaf\033\uffaf\034\uffaf\040" +
-    "\uffaf\042\uffaf\043\uffaf\045\uffaf\046\uffaf\047\uffaf\050\uffaf" +
-    "\001\002\000\026\032\023\033\034\034\017\040\013\042" +
-    "\011\043\036\045\016\046\014\047\027\050\021\001\002" +
-    "\000\030\032\023\033\034\034\017\037\225\040\013\042" +
-    "\011\043\036\045\016\046\014\047\027\050\021\001\002" +
-    "\000\036\002\uffae\032\uffae\033\uffae\034\uffae\035\uffae\037" +
-    "\uffae\040\uffae\042\uffae\043\uffae\044\uffae\045\uffae\046\uffae" +
-    "\047\uffae\050\uffae\001\002\000\004\050\122\001\002\000" +
-    "\044\002\uffd1\016\uffd1\021\uffd1\031\uffd1\032\uffd1\033\uffd1" +
-    "\034\uffd1\035\uffd1\037\uffd1\040\uffd1\042\uffd1\043\uffd1\044" +
-    "\uffd1\045\uffd1\046\uffd1\047\uffd1\050\uffd1\001\002\000\004" +
-    "\002\001\001\002\000\070\002\uffad\004\075\006\074\007" +
-    "\064\010\073\011\063\012\076\016\071\017\065\024\070" +
-    "\025\062\026\067\027\072\030\066\032\uffad\033\uffad\034" +
-    "\uffad\035\uffad\037\uffad\040\uffad\042\uffad\043\uffad\044\uffad" +
-    "\045\uffad\046\uffad\047\uffad\050\uffad\001\002\000\042\002" +
-    "\uffd6\016\uffd6\031\226\032\uffd6\033\uffd6\034\uffd6\035\uffd6" +
-    "\037\uffd6\040\uffd6\042\uffd6\043\uffd6\044\uffd6\045\uffd6\046" +
-    "\uffd6\047\uffd6\050\uffd6\001\002\000\016\013\057\020\050" +
-    "\025\051\041\052\050\021\052\053\001\002\000\040\002" +
-    "\uffd5\031\152\032\uffd5\033\uffd5\034\uffd5\035\uffd5\037\uffd5" +
-    "\040\uffd5\042\uffd5\043\uffd5\044\uffd5\045\uffd5\046\uffd5\047" +
-    "\uffd5\050\uffd5\001\002\000\016\013\057\020\050\025\051" +
-    "\041\052\050\021\052\053\001\002\000\004\032\uffc4\001" +
-    "\002\000\004\032\240\001\002\000\026\032\uffc3\033\uffc3" +
-    "\034\uffc3\040\uffc3\042\uffc3\043\uffc3\045\uffc3\046\uffc3\047" +
-    "\uffc3\050\uffc3\001\002\000\026\032\023\033\034\034\017" +
+    "\052\053\001\002\000\036\002\uffa9\032\uffa9\033\uffa9\034" +
+    "\uffa9\035\uffa9\037\uffa9\040\uffa9\042\uffa9\043\uffa9\044\uffa9" +
+    "\045\uffa9\046\uffa9\047\uffa9\050\uffa9\001\002\000\040\004" +
+    "\075\006\074\007\064\010\073\011\063\012\076\016\071" +
+    "\017\065\021\uffa8\024\070\025\062\026\067\027\072\030" +
+    "\066\031\uffa8\001\002\000\026\032\023\033\034\034\017" +
     "\040\013\042\011\043\036\045\016\046\014\047\027\050" +
-    "\021\001\002\000\030\032\023\033\034\034\017\037\243" +
+    "\021\001\002\000\030\032\023\033\034\034\017\037\171" +
     "\040\013\042\011\043\036\045\016\046\014\047\027\050" +
-    "\021\001\002\000\036\002\uffc2\032\uffc2\033\uffc2\034\uffc2" +
-    "\035\uffc2\037\uffc2\040\uffc2\042\uffc2\043\uffc2\044\uffc2\045" +
-    "\uffc2\046\uffc2\047\uffc2\050\uffc2\001\002\000\016\013\057" +
+    "\021\001\002\000\036\002\uffcc\032\uffcc\033\uffcc\034\uffcc" +
+    "\035\uffcc\037\uffcc\040\uffcc\042\uffcc\043\uffcc\044\uffcc\045" +
+    "\uffcc\046\uffcc\047\uffcc\050\uffcc\001\002\000\022\013\057" +
+    "\020\050\021\uffa6\025\051\031\uffa6\041\052\050\021\052" +
+    "\053\001\002\000\006\021\174\031\164\001\002\000\102" +
+    "\002\uffa5\004\uffa5\006\uffa5\007\uffa5\010\uffa5\011\uffa5\012" +
+    "\uffa5\015\uffa5\016\uffa5\017\uffa5\021\uffa5\023\uffa5\024\uffa5" +
+    "\025\uffa5\026\uffa5\027\uffa5\030\uffa5\031\uffa5\032\uffa5\033" +
+    "\uffa5\034\uffa5\035\uffa5\036\uffa5\037\uffa5\040\uffa5\042\uffa5" +
+    "\043\uffa5\044\uffa5\045\uffa5\046\uffa5\047\uffa5\050\uffa5\001" +
+    "\002\000\006\035\uffb7\037\uffb4\001\002\000\016\013\057" +
     "\020\050\025\051\041\052\050\021\052\053\001\002\000" +
-    "\040\002\uffd4\031\152\032\uffd4\033\uffd4\034\uffd4\035\uffd4" +
-    "\037\uffd4\040\uffd4\042\uffd4\043\uffd4\044\uffd4\045\uffd4\046" +
-    "\uffd4\047\uffd4\050\uffd4\001\002" });
+    "\004\036\uffbc\001\002\000\004\036\201\001\002\000\026" +
+    "\032\uffbb\033\uffbb\034\uffbb\040\uffbb\042\uffbb\043\uffbb\045" +
+    "\uffbb\046\uffbb\047\uffbb\050\uffbb\001\002\000\026\032\023" +
+    "\033\034\034\017\040\013\042\011\043\036\045\016\046" +
+    "\014\047\027\050\021\001\002\000\032\032\023\033\034" +
+    "\034\017\035\uffba\037\uffba\040\013\042\011\043\036\045" +
+    "\016\046\014\047\027\050\021\001\002\000\006\035\uffb7" +
+    "\037\uffb4\001\002\000\004\037\212\001\002\000\004\035" +
+    "\207\001\002\000\026\032\uffb6\033\uffb6\034\uffb6\040\uffb6" +
+    "\042\uffb6\043\uffb6\045\uffb6\046\uffb6\047\uffb6\050\uffb6\001" +
+    "\002\000\026\032\023\033\034\034\017\040\013\042\011" +
+    "\043\036\045\016\046\014\047\027\050\021\001\002\000" +
+    "\030\032\023\033\034\034\017\037\uffb5\040\013\042\011" +
+    "\043\036\045\016\046\014\047\027\050\021\001\002\000" +
+    "\036\002\uffb9\032\uffb9\033\uffb9\034\uffb9\035\uffb9\037\uffb9" +
+    "\040\uffb9\042\uffb9\043\uffb9\044\uffb9\045\uffb9\046\uffb9\047" +
+    "\uffb9\050\uffb9\001\002\000\004\037\214\001\002\000\036" +
+    "\002\uffb8\032\uffb8\033\uffb8\034\uffb8\035\uffb8\037\uffb8\040" +
+    "\uffb8\042\uffb8\043\uffb8\044\uffb8\045\uffb8\046\uffb8\047\uffb8" +
+    "\050\uffb8\001\002\000\004\050\216\001\002\000\004\020" +
+    "\217\001\002\000\006\021\uffb2\050\122\001\002\000\006" +
+    "\021\uffb3\031\227\001\002\000\044\002\uffd0\016\uffd0\021" +
+    "\uffd0\031\uffd0\032\uffd0\033\uffd0\034\uffd0\035\uffd0\037\uffd0" +
+    "\040\uffd0\042\uffd0\043\uffd0\044\uffd0\045\uffd0\046\uffd0\047" +
+    "\uffd0\050\uffd0\001\002\000\004\021\223\001\002\000\026" +
+    "\032\uffae\033\uffae\034\uffae\040\uffae\042\uffae\043\uffae\045" +
+    "\uffae\046\uffae\047\uffae\050\uffae\001\002\000\026\032\023" +
+    "\033\034\034\017\040\013\042\011\043\036\045\016\046" +
+    "\014\047\027\050\021\001\002\000\030\032\023\033\034" +
+    "\034\017\037\226\040\013\042\011\043\036\045\016\046" +
+    "\014\047\027\050\021\001\002\000\036\002\uffad\032\uffad" +
+    "\033\uffad\034\uffad\035\uffad\037\uffad\040\uffad\042\uffad\043" +
+    "\uffad\044\uffad\045\uffad\046\uffad\047\uffad\050\uffad\001\002" +
+    "\000\004\050\122\001\002\000\044\002\uffd1\016\uffd1\021" +
+    "\uffd1\031\uffd1\032\uffd1\033\uffd1\034\uffd1\035\uffd1\037\uffd1" +
+    "\040\uffd1\042\uffd1\043\uffd1\044\uffd1\045\uffd1\046\uffd1\047" +
+    "\uffd1\050\uffd1\001\002\000\004\002\001\001\002\000\070" +
+    "\002\uffac\004\075\006\074\007\064\010\073\011\063\012" +
+    "\076\016\071\017\065\024\070\025\062\026\067\027\072" +
+    "\030\066\032\uffac\033\uffac\034\uffac\035\uffac\037\uffac\040" +
+    "\uffac\042\uffac\043\uffac\044\uffac\045\uffac\046\uffac\047\uffac" +
+    "\050\uffac\001\002\000\042\002\uffd6\016\uffd6\031\227\032" +
+    "\uffd6\033\uffd6\034\uffd6\035\uffd6\037\uffd6\040\uffd6\042\uffd6" +
+    "\043\uffd6\044\uffd6\045\uffd6\046\uffd6\047\uffd6\050\uffd6\001" +
+    "\002\000\016\013\057\020\050\025\051\041\052\050\021" +
+    "\052\053\001\002\000\040\002\uffd5\031\152\032\uffd5\033" +
+    "\uffd5\034\uffd5\035\uffd5\037\uffd5\040\uffd5\042\uffd5\043\uffd5" +
+    "\044\uffd5\045\uffd5\046\uffd5\047\uffd5\050\uffd5\001\002\000" +
+    "\016\013\057\020\050\025\051\041\052\050\021\052\053" +
+    "\001\002\000\004\032\uffc4\001\002\000\004\032\241\001" +
+    "\002\000\026\032\uffc3\033\uffc3\034\uffc3\040\uffc3\042\uffc3" +
+    "\043\uffc3\045\uffc3\046\uffc3\047\uffc3\050\uffc3\001\002\000" +
+    "\026\032\023\033\034\034\017\040\013\042\011\043\036" +
+    "\045\016\046\014\047\027\050\021\001\002\000\030\032" +
+    "\023\033\034\034\017\037\244\040\013\042\011\043\036" +
+    "\045\016\046\014\047\027\050\021\001\002\000\036\002" +
+    "\uffc2\032\uffc2\033\uffc2\034\uffc2\035\uffc2\037\uffc2\040\uffc2" +
+    "\042\uffc2\043\uffc2\044\uffc2\045\uffc2\046\uffc2\047\uffc2\050" +
+    "\uffc2\001\002\000\016\013\057\020\050\025\051\041\052" +
+    "\050\021\052\053\001\002\000\040\002\uffd4\031\152\032" +
+    "\uffd4\033\uffd4\034\uffd4\035\uffd4\037\uffd4\040\uffd4\042\uffd4" +
+    "\043\uffd4\044\uffd4\045\uffd4\046\uffd4\047\uffd4\050\uffd4\001" +
+    "\002" });
 
   /** Access to parse-action table. */
   public short[][] action_table() {return _action_table;}
@@ -431,14 +433,14 @@ public class parser extends java_cup.runtime.lr_parser {
   /** <code>reduce_goto</code> table. */
   protected static final short[][] _reduce_table = 
     unpackFromStrings(new String[] {
-    "\000\243\000\052\002\034\004\017\005\031\006\006\007" +
+    "\000\244\000\052\002\034\004\017\005\031\006\006\007" +
     "\011\010\007\012\027\013\021\014\036\015\004\016\040" +
     "\017\030\021\037\026\014\030\024\031\005\032\023\033" +
     "\003\034\032\040\025\001\001\000\002\001\001\000\002" +
     "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
-    "\001\000\004\047\234\001\001\000\002\001\001\000\006" +
-    "\010\231\034\217\001\001\000\010\032\055\034\057\037" +
-    "\230\001\001\000\002\001\001\000\004\062\213\001\001" +
+    "\001\000\004\047\235\001\001\000\002\001\001\000\006" +
+    "\010\232\034\220\001\001\000\010\032\055\034\057\037" +
+    "\231\001\001\000\002\001\001\000\004\063\214\001\001" +
     "\000\004\055\175\001\001\000\002\001\001\000\002\001" +
     "\001\000\046\002\034\004\017\005\031\006\006\007\011" +
     "\010\007\012\027\014\044\015\004\016\040\017\030\021" +
@@ -496,7 +498,7 @@ public class parser extends java_cup.runtime.lr_parser {
     "\037\140\001\001\000\002\001\001\000\002\001\001\000" +
     "\012\032\055\034\057\035\153\037\140\001\001\000\002" +
     "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
-    "\001\000\004\064\160\001\001\000\002\001\001\000\012" +
+    "\001\000\004\065\160\001\001\000\002\001\001\000\012" +
     "\032\055\034\057\037\162\041\161\001\001\000\002\001" +
     "\001\000\002\001\001\000\010\032\055\034\057\037\165" +
     "\001\001\000\002\001\001\000\002\001\001\000\050\002" +
@@ -508,47 +510,47 @@ public class parser extends java_cup.runtime.lr_parser {
     "\030\024\031\005\032\023\033\003\034\032\040\025\001" +
     "\001\000\002\001\001\000\012\032\055\034\057\037\162" +
     "\041\172\001\001\000\002\001\001\000\002\001\001\000" +
-    "\006\020\211\060\204\001\001\000\012\032\055\034\057" +
+    "\006\020\212\061\205\001\001\000\012\032\055\034\057" +
     "\036\176\037\053\001\001\000\004\056\177\001\001\000" +
     "\002\001\001\000\004\057\201\001\001\000\050\002\034" +
     "\004\017\005\031\006\006\007\011\010\007\012\027\013" +
     "\202\014\036\015\004\016\040\017\030\021\037\030\024" +
     "\031\005\032\023\033\003\034\032\040\025\001\001\000" +
-    "\052\002\034\004\017\005\031\006\006\007\011\010\007" +
-    "\012\027\014\044\015\004\016\040\017\030\020\203\021" +
+    "\050\002\034\004\017\005\031\006\006\007\011\010\007" +
+    "\012\027\014\044\015\004\016\040\017\030\021\037\030" +
+    "\024\031\005\032\023\033\003\034\032\040\025\060\203" +
+    "\001\001\000\006\020\204\061\205\001\001\000\002\001" +
+    "\001\000\002\001\001\000\004\062\207\001\001\000\050" +
+    "\002\034\004\017\005\031\006\006\007\011\010\007\012" +
+    "\027\013\210\014\036\015\004\016\040\017\030\021\037" +
+    "\030\024\031\005\032\023\033\003\034\032\040\025\001" +
+    "\001\000\046\002\034\004\017\005\031\006\006\007\011" +
+    "\010\007\012\027\014\044\015\004\016\040\017\030\021" +
     "\037\030\024\031\005\032\023\033\003\034\032\040\025" +
-    "\060\204\001\001\000\002\001\001\000\002\001\001\000" +
-    "\004\061\206\001\001\000\050\002\034\004\017\005\031" +
-    "\006\006\007\011\010\007\012\027\013\207\014\036\015" +
-    "\004\016\040\017\030\021\037\030\024\031\005\032\023" +
-    "\033\003\034\032\040\025\001\001\000\046\002\034\004" +
-    "\017\005\031\006\006\007\011\010\007\012\027\014\044" +
-    "\015\004\016\040\017\030\021\037\030\024\031\005\032" +
-    "\023\033\003\034\032\040\025\001\001\000\002\001\001" +
-    "\000\002\001\001\000\002\001\001\000\002\001\001\000" +
-    "\002\001\001\000\010\010\216\022\220\034\217\001\001" +
-    "\000\002\001\001\000\002\001\001\000\002\001\001\000" +
-    "\004\063\222\001\001\000\050\002\034\004\017\005\031" +
-    "\006\006\007\011\010\007\012\027\013\223\014\036\015" +
-    "\004\016\040\017\030\021\037\030\024\031\005\032\023" +
-    "\033\003\034\032\040\025\001\001\000\046\002\034\004" +
-    "\017\005\031\006\006\007\011\010\007\012\027\014\044" +
-    "\015\004\016\040\017\030\021\037\030\024\031\005\032" +
-    "\023\033\003\034\032\040\025\001\001\000\002\001\001" +
-    "\000\004\034\226\001\001\000\002\001\001\000\002\001" +
-    "\001\000\002\001\001\000\002\001\001\000\014\011\233" +
-    "\032\055\034\057\035\147\037\140\001\001\000\002\001" +
-    "\001\000\012\032\055\034\057\036\235\037\053\001\001" +
-    "\000\004\050\236\001\001\000\002\001\001\000\004\051" +
-    "\240\001\001\000\050\002\034\004\017\005\031\006\006" +
-    "\007\011\010\007\012\027\013\241\014\036\015\004\016" +
-    "\040\017\030\021\037\030\024\031\005\032\023\033\003" +
-    "\034\032\040\025\001\001\000\046\002\034\004\017\005" +
-    "\031\006\006\007\011\010\007\012\027\014\044\015\004" +
-    "\016\040\017\030\021\037\030\024\031\005\032\023\033" +
-    "\003\034\032\040\025\001\001\000\002\001\001\000\014" +
-    "\011\244\032\055\034\057\035\147\037\140\001\001\000" +
-    "\002\001\001" });
+    "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
+    "\001\000\002\001\001\000\002\001\001\000\010\010\217" +
+    "\022\221\034\220\001\001\000\002\001\001\000\002\001" +
+    "\001\000\002\001\001\000\004\064\223\001\001\000\050" +
+    "\002\034\004\017\005\031\006\006\007\011\010\007\012" +
+    "\027\013\224\014\036\015\004\016\040\017\030\021\037" +
+    "\030\024\031\005\032\023\033\003\034\032\040\025\001" +
+    "\001\000\046\002\034\004\017\005\031\006\006\007\011" +
+    "\010\007\012\027\014\044\015\004\016\040\017\030\021" +
+    "\037\030\024\031\005\032\023\033\003\034\032\040\025" +
+    "\001\001\000\002\001\001\000\004\034\227\001\001\000" +
+    "\002\001\001\000\002\001\001\000\002\001\001\000\002" +
+    "\001\001\000\014\011\234\032\055\034\057\035\147\037" +
+    "\140\001\001\000\002\001\001\000\012\032\055\034\057" +
+    "\036\236\037\053\001\001\000\004\050\237\001\001\000" +
+    "\002\001\001\000\004\051\241\001\001\000\050\002\034" +
+    "\004\017\005\031\006\006\007\011\010\007\012\027\013" +
+    "\242\014\036\015\004\016\040\017\030\021\037\030\024" +
+    "\031\005\032\023\033\003\034\032\040\025\001\001\000" +
+    "\046\002\034\004\017\005\031\006\006\007\011\010\007" +
+    "\012\027\014\044\015\004\016\040\017\030\021\037\030" +
+    "\024\031\005\032\023\033\003\034\032\040\025\001\001" +
+    "\000\002\001\001\000\014\011\245\032\055\034\057\035" +
+    "\147\037\140\001\001\000\002\001\001" });
 
   /** Access to <code>reduce_goto</code> table. */
   public short[][] reduce_table() {return _reduce_table;}
@@ -614,135 +616,130 @@ public class parser extends java_cup.runtime.lr_parser {
     }
 
 
-public SymbolTable globalSymbolTable;
-public SymbolTable currentSymTable;
-public StringBuffer funcBuffer;
-public StringBuffer globalDecBuffer;
-public StringBuffer mainBuffer;
-public BufferedWriter bwr;
-public int loopCount;
-public int totLoopCount;
-public LinkedList<Integer> loopList;
-public int indexString;
-public ArrayList<String> stringList;
-public StringBuffer stringDecl; 
-public HashMap<String, FuncObj> funcTable;
+  public SymbolTable globalSymbolTable;
+  public SymbolTable currentSymTable;
+  public StringBuffer funcBuffer;
+  public StringBuffer globalDecBuffer;
+  public StringBuffer mainBuffer;
+  public BufferedWriter bwr;
+  public int loopCount;
+  public int totLoopCount;
+  public LinkedList<Integer> loopList;
+  public int indexString;
+  public ArrayList<String> stringList;
+  public StringBuffer stringDecl;
+  public HashMap<String, FuncObj> funcTable;
 
+  public enum Type {
+    NUMBER, TABLE, IMMEDIATE, RNUM, BOOL
+  }; // different types of values NUMBER means that the value is assigned to a var
+     // and is of type NUMBER, IMMEDIATE means it is a immediate read from file
 
-public enum Type {NUMBER, TABLE, IMMEDIATE, RNUM, BOOL}; //different types of values NUMBER means that the value is assigned to a var and is of type NUMBER, IMMEDIATE means it is a immediate read from file
+  public class SymbolTable {
+    public ArrayList<ValueObj> varList;
+    public ArrayList<ValueObj> expList;
+    public HashMap<String, ValueObj> varTable;
+    public int nargs;
+    public Integer registerCount; // used as counter for SSA registers
+    SymbolTable prev;
+    StringBuffer currentBuffer;
 
-public class SymbolTable{
-        public ArrayList<ValueObj> varList;
-        public ArrayList<ValueObj> expList;
-        public HashMap<String, ValueObj> varTable;
-        public int nargs;
-        public Integer registerCount; //used as counter for SSA registers
-        SymbolTable prev;
-        StringBuffer currentBuffer;
-
-        public SymbolTable getPrev(boolean insideSameFunction){
-            if(insideSameFunction){
-                prev.registerCount=registerCount;
-                return prev;
-            }else{
-                return prev;
-            }
-        }
-        
-        
-        public SymbolTable(SymbolTable p, boolean isFunction){ //isFunction is needed to distinguish closure from functions
-            this.varTable = new HashMap<String, ValueObj>();
-            this.varList = new ArrayList<ValueObj>();
-            this.expList = new ArrayList<ValueObj>();
-            this.nargs = 0;
-            this.prev = p;
-            this.registerCount = p==null ? 1 : p.registerCount; //if it the main table, start reg from 1
-            currentBuffer =  p==null ? currentBuffer : p.currentBuffer; //set buffer main buffer
-            if(isFunction){
-                registerCount=1; //if it is a funct, restart from 1
-                currentBuffer=funcBuffer; //as it is a func, use func buffer
-            }
-        }
-
-        public ValueObj get(String s){
-            for (SymbolTable sym = this; sym != null; sym = sym.prev){
-                ValueObj found = sym.varTable.get(s);
-                if (found != null)
-                    return found;
-            }
-            return null;
-        }
+    public SymbolTable getPrev(boolean insideSameFunction) {
+      if (insideSameFunction) {
+        prev.registerCount = registerCount;
+        return prev;
+      } else {
+        return prev;
+      }
     }
 
-
-public class ValueObj {
-
-		Double value;
-        public String name;
-        public Type type;
-        public String scope;
-        Integer nElement; //for arrrays
-
-		public ValueObj(String name) {
-			super();
-			this.name = name;
-            type = null;
-		}
-
-        public ValueObj(Double value){
-            this.value=value;
-            type = Type.IMMEDIATE;
-        }
-
-        public void setDouble(){
-            this.type= Type.NUMBER;
-        }
-
-        public void setGlobal(){
-            scope="@";
-        }
-
-        public void setLocal(){
-            scope="%";
-        }
-
-        public void setRNUM(){
-            this.type=Type.RNUM;
-        }
-
-        public void setBool(){
-            this.type=Type.BOOL;
-        }
-
-        public boolean isLocal(){
-            return scope.compareTo("%")==0;
-        }
-        
-  
- 
+    public SymbolTable(SymbolTable p, boolean isFunction) { // isFunction is needed to distinguish closure from
+                                                            // functions
+      this.varTable = new HashMap<String, ValueObj>();
+      this.varList = new ArrayList<ValueObj>();
+      this.expList = new ArrayList<ValueObj>();
+      this.nargs = 0;
+      this.prev = p;
+      this.registerCount = p == null ? 1 : p.registerCount; // if it the main table, start reg from 1
+      currentBuffer = p == null ? currentBuffer : p.currentBuffer; // set buffer main buffer
+      if (isFunction) {
+        registerCount = 1; // if it is a funct, restart from 1
+        currentBuffer = funcBuffer; // as it is a func, use func buffer
+      }
     }
 
-   
+    public ValueObj get(String s) {
+      for (SymbolTable sym = this; sym != null; sym = sym.prev) {
+        ValueObj found = sym.varTable.get(s);
+        if (found != null)
+          return found;
+      }
+      return null;
+    }
+  }
 
-public class FuncObj {
+  public class ValueObj {
 
-        public String name;
-        public int nargsTot;
-        public ArrayList<ValueObj> paramsList;
-        public int varCount;
-        public boolean ret;
-      
+    Double value;
+    public String name;
+    public Type type;
+    public String scope;
+    Integer nElement; // for arrrays
 
-        public FuncObj(String name){
-            this.name = name;
-            this.paramsList = new ArrayList<>();
-            this.varCount = 1;
-            this.nargsTot = 0;
-            this.ret = false;
-           
-        }
+    public ValueObj(String name) {
+      super();
+      this.name = name;
+      type = null;
     }
 
+    public ValueObj(Double value) {
+      this.value = value;
+      type = Type.IMMEDIATE;
+    }
+
+    public void setDouble() {
+      this.type = Type.NUMBER;
+    }
+
+    public void setGlobal() {
+      scope = "@";
+    }
+
+    public void setLocal() {
+      scope = "%";
+    }
+
+    public void setRNUM() {
+      this.type = Type.RNUM;
+    }
+
+    public void setBool() {
+      this.type = Type.BOOL;
+    }
+
+    public boolean isLocal() {
+      return scope.compareTo("%") == 0;
+    }
+
+  }
+
+  public class FuncObj {
+
+    public String name;
+    public int nargsTot;
+    public ArrayList<ValueObj> paramsList;
+    public int varCount;
+    public boolean ret;
+
+    public FuncObj(String name) {
+      this.name = name;
+      this.paramsList = new ArrayList<>();
+      this.varCount = 1;
+      this.nargsTot = 0;
+      this.ret = false;
+
+    }
+  }
 
 
 
@@ -752,262 +749,276 @@ class CUP$parser$actions {
 
 
 
-    public void appendFuncBuffer(String s, boolean newLine){
-        funcBuffer.append(s);
-        if (newLine)
-            funcBuffer.append("\n");
+    public void appendFuncBuffer(String s, boolean newLine) {
+      funcBuffer.append(s);
+      if (newLine)
+        funcBuffer.append("\n");
     }
 
-    public void appendGlobalDecBuffer(String s, boolean newLine){
-        globalDecBuffer.append(s);
-        if (newLine)
-            globalDecBuffer.append("\n");
+    public void appendGlobalDecBuffer(String s, boolean newLine) {
+      globalDecBuffer.append(s);
+      if (newLine)
+        globalDecBuffer.append("\n");
     }
 
-    public void appendMainBuffer(String s, boolean newLine){
-       currentSymTable.currentBuffer.append(s);
-        if (newLine)
-            currentSymTable.currentBuffer.append("\n");
+    public void appendMainBuffer(String s, boolean newLine) {
+      currentSymTable.currentBuffer.append(s);
+      if (newLine)
+        currentSymTable.currentBuffer.append("\n");
     }
 
-    public String getRegister(){
-        return String.valueOf(currentSymTable.registerCount++);
+    public String getRegister() {
+      return String.valueOf(currentSymTable.registerCount++);
     }
 
-    public String createGlovalVarLLVM(String name, String type, String value){
+    public String createGlovalVarLLVM(String name, String type, String value) {
 
-            return "@"+name+" = " +"global "+type+" "+value+ ", align 8";
-
-    }
-
-    public String storeLLVM(String source, String sourceType, String dest, String destType, String align){
-          //  store i32 %4, i32* %3, align 4
-          return "store " + sourceType +" " + source+ ", " + destType+"* "+dest+", align " +align;
+      return "@" + name + " = " + "global " + type + " " + value + ", align 8";
 
     }
 
-    public String loadLLVM(String outName, String outType, String inputType, String inputName, String align ){
-        // %2 = load double, double* @b, align 8
-
-        return outName+" = " + "load " + outType+", "+inputType+"* "+inputName+", "+"align "+align;
-
-    }
-
-
-    public ValueObj initLocalVar(ValueObj n, ValueObj x){
-
-                        String op1, op2;
-                        //%1 = alloca i32, align 4
-                        if(x.type == Type.IMMEDIATE){
-                            op2=""+x.value;
-                            if(n.type == null){
-                            n.setDouble(); //set type number in the variable
-                            n.setLocal();
-                            n.name=getRegister(); //assign to local var a new register
-                            appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //append to the main declaration buffer
-                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                            
-                            }else if(n.type == Type.NUMBER){
-                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                        }
-                        }else if(x.type == Type.NUMBER){
-                            op2=x.scope+x.name;
-                            if(n.type == null){
-                                n.setDouble(); //set type number in the variable
-                                n.setLocal();
-                                n.name=getRegister(); //assign to local var a new register
-                                appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //allocate new varappend to the main declaration buffer
-
-                                String reg = getRegister(); //get a new register
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", op2,"8"), true); //save the value of the var into the register
-                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
-                            }else if(n.type == Type.NUMBER){
-                                String reg = getRegister();
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
-
-                            }
-                        }else if(x.type == Type.RNUM){
-                            op2="%"+x.name;
-                            if(n.type == null){
-                                n.setDouble(); //set type number in the variable
-                                n.setLocal();
-                                n.name=getRegister(); //assign to local var a new register
-                                appendMainBuffer("%"+n.name+" = alloca double, align 8", true); //allocate new varappend to the main declaration buffer
-                                appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true); 
-                            }else if(n.type == Type.NUMBER){
-                            appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true);
-                            }
-                        }
-
-                        return n;
+    public String storeLLVM(String source, String sourceType, String dest, String destType, String align) {
+      // store i32 %4, i32* %3, align 4
+      return "store " + sourceType + " " + source + ", " + destType + "* " + dest + ", align " + align;
 
     }
 
-     public ValueObj initVar(ValueObj n, ValueObj x){
+    public String loadLLVM(String outName, String outType, String inputType, String inputName, String align) {
+      // %2 = load double, double* @b, align 8
 
-                        String op1, op2;
+      return outName + " = " + "load " + outType + ", " + inputType + "* " + inputName + ", " + "align " + align;
 
-                        if(n.scope != null && n.isLocal()){
-                            return initLocalVar(n, x);
-                        }
-
-                        if(x.type == Type.IMMEDIATE){
-                            op2=""+x.value;
-                            if(n.type == null){
-                            n.setDouble(); //set type number in the variable
-                            n.setGlobal();
-                            System.out.println("VarInit "+ n.type + n.name);
-                            appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", ""+op2), true); //append to the Global declaration buffer
-                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                            
-                            }else if(n.type == Type.NUMBER){
-                            appendMainBuffer( storeLLVM(""+op2, "double", n.scope+n.name, "double", "8"), true); //load with a new value
-                        }
-                        }else if(x.type == Type.NUMBER){
-                            op2=x.scope+x.name;
-                            if(n.type == null){
-                                n.setDouble(); //set type number in the variable
-                                n.setGlobal();
-                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                                String reg = getRegister(); //get a new register
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", op2,"8"), true); //save the value of the var into the register
-                                appendMainBuffer( storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); //store new var with value pointed by the variable
-                            }else if(n.type == Type.NUMBER){
-                                String reg = getRegister();
-                                appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name,"8"), true);
-                                appendMainBuffer(storeLLVM("%"+reg, "double", n.scope+n.name, "double", "8"), true); 
-
-                            }
-                        }else if(x.type == Type.RNUM){
-                            op2="%"+x.name;
-                            if(n.type == null){
-                                n.setDouble(); //set type number in the variable
-                                n.setGlobal();
-                                appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); //append to  the Global declaration buffer
-                                appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true); 
-                            }else if(n.type == Type.NUMBER){
-                            appendMainBuffer(storeLLVM(op2, "double", n.scope+n.name, "double", "8"), true);
-                            }
-                        }
-
-                        return n;
     }
 
-    
+    public ValueObj initLocalVar(ValueObj n, ValueObj x) {
 
-     public ValueObj operation(String operation, ValueObj x, ValueObj y){ //type of operation, value of first operand, value of second operand
-                            ValueObj RESULT=null; //final result to return
-                            String a=null; //variables for registers
-                            String b=null;
-                            String r=null;
-                            String op1=null, op2=null;
+      String op1, op2;
+      // %1 = alloca i32, align 4
+      if (x.type == Type.IMMEDIATE) {
+        op2 = "" + x.value;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setLocal();
+          n.name = getRegister(); // assign to local var a new register
+          appendMainBuffer("%" + n.name + " = alloca double, align 8", true); // append to the main declaration buffer
+          appendMainBuffer(storeLLVM("" + op2, "double", n.scope + n.name, "double", "8"), true); // load with a new
+                                                                                                  // value
 
-
-                            if(x.type==Type.IMMEDIATE && y.type==Type.IMMEDIATE){ //if both are immediates, perform operation at compile time
-                                ///create switch
-                                if(operation.compareTo("fadd")==0)
-                                    RESULT=new ValueObj(x.value+y.value);
-                                else if(operation.compareTo("fsub")==0)
-                                    RESULT=new ValueObj(x.value-y.value);
-                                else if(operation.compareTo("fmul")==0)
-                                    RESULT=new ValueObj(x.value*y.value);
-                                else if(operation.compareTo("fdiv")==0)
-                                    RESULT=new ValueObj(x.value/y.value);
-                                else if(operation.compareTo("pow")==0 )
-                                    RESULT=new ValueObj(Math.pow(x.value, y.value));
-                                
-                                RESULT.type=Type.IMMEDIATE; //the returning value is itself a double
-                            }else{
-
-                                if (x.type==Type.NUMBER){
-                                     a=getRegister();
-                                     appendMainBuffer(loadLLVM("%"+a, "double", "double", x.scope+x.name, "8"), true); //load value of first
-                                     op1="%"+a;
-                                }else if(x.type==Type.IMMEDIATE){
-                                    op1=""+x.value;
-                                }else if(x.type==Type.RNUM){
-                                     op1="%"+x.name;
-                                }
-                                
-                                if(y.type==Type.NUMBER){
-                                    b=getRegister();
-                                    appendMainBuffer(loadLLVM("%"+b, "double", "double", y.scope+y.name, "8" ), true); //load value of second
-                                    op2="%"+b;
-                                }else if(y.type==Type.IMMEDIATE){
-                                    op2=""+y.value;
-                                }else if(y.type==Type.RNUM){
-                                     op2="%"+y.name;
-                                }
-                                r=getRegister();
-                                appendMainBuffer("%"+r+" = "+ operation +" double "+op1+", " +op2, true); //perform operation and save in register
-                                RESULT = new ValueObj(r);
-                                RESULT.setLocal();
-                                RESULT.setRNUM();
-                            }
-                           
-                           
-                            return RESULT;
-    } 
-
-    public ValueObj logicExpEval(String operation, ValueObj x, ValueObj y){
-
-            
-                    String op1=null;
-                    String op2=null;
-                    if(x.type == Type.IMMEDIATE){ //if first operand is and immediate
-                        op1=""+x.value;             //just store the value
-                    }else if(x.type == Type.NUMBER){    //if it is a var
-                        String reg=getRegister(); 
-                        //loadLLVM(String outName, String outType, String inputType, String inputName, String align )
-                        appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8" ),true); //load it
-                        op1="%"+reg; //save register where it is loaded
-                    }else if(x.type == Type.RNUM){
-                        op1=x.scope+x.name;
-                        
-                    }if(y.type == Type.IMMEDIATE){ //same as first operand
-                        op2=""+y.value;
-                    }else if(y.type == Type.NUMBER){
-                        String reg=getRegister();
-                         appendMainBuffer(loadLLVM("%"+reg, "double", "double", y.scope+y.name, "8" ), true);
-                        op2="%"+reg;
-                    }else if(y.type == Type.RNUM){
-                        op2=y.scope+y.name;
-                    }
-                    String result = getRegister(); //get register for output
-                    appendMainBuffer("%"+result + " = fcmp "+ operation +" double " + op1 +", " + op2, true); //calculate result
-                    ValueObj RESULT =  new ValueObj(result); //return new value
-                    RESULT.setBool();
-                    RESULT.setLocal();
-                    
-                    return RESULT;
-
-    }   
-
-     public int genLabelString(){
-        return indexString++;
-    }
-
-    private void printStrings(){
-
-        
-        
-        stringDecl.append("declare i32 @printf(i8*, ...)\n"); //declare printf instruction
-        System.out.println(stringList.size());
-        for (int i = 0; i < stringList.size(); i++){
-            
-            String s = stringList.get(i);
-            s = s.substring(1, s.length() - 1);
-            int length = s.length();
-            if (!s.contains("\\n"))
-                length++;
-            s = s.replace("\\n", "\\0A");
-            s = s + "\\00";
-            stringDecl.append("@.str." + i + " = private constant [" + length + " x i8] c\"" + s + "\", align 1\n");
+        } else if (n.type == Type.NUMBER) {
+          appendMainBuffer(storeLLVM("" + op2, "double", n.scope + n.name, "double", "8"), true); // load with a new
+                                                                                                  // value
         }
-        
-    }                 
-    
+      } else if (x.type == Type.NUMBER) {
+        op2 = x.scope + x.name;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setLocal();
+          n.name = getRegister(); // assign to local var a new register
+          appendMainBuffer("%" + n.name + " = alloca double, align 8", true); // allocate new varappend to the main
+                                                                              // declaration buffer
+
+          String reg = getRegister(); // get a new register
+          appendMainBuffer(loadLLVM("%" + reg, "double", "double", op2, "8"), true); // save the value of the var into
+                                                                                     // the register
+          appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true); // store new var with
+                                                                                                   // value pointed by
+                                                                                                   // the variable
+        } else if (n.type == Type.NUMBER) {
+          String reg = getRegister();
+          appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true);
+          appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true);
+
+        }
+      } else if (x.type == Type.RNUM) {
+        op2 = "%" + x.name;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setLocal();
+          n.name = getRegister(); // assign to local var a new register
+          appendMainBuffer("%" + n.name + " = alloca double, align 8", true); // allocate new varappend to the main
+                                                                              // declaration buffer
+          appendMainBuffer(storeLLVM(op2, "double", n.scope + n.name, "double", "8"), true);
+        } else if (n.type == Type.NUMBER) {
+          appendMainBuffer(storeLLVM(op2, "double", n.scope + n.name, "double", "8"), true);
+        }
+      }
+
+      return n;
+
+    }
+
+    public ValueObj initVar(ValueObj n, ValueObj x) {
+
+      String op1, op2;
+
+      if (n.scope != null && n.isLocal()) {
+        return initLocalVar(n, x);
+      }
+
+      if (x.type == Type.IMMEDIATE) {
+        op2 = "" + x.value;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setGlobal();
+          System.out.println("VarInit " + n.type + n.name);
+          appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "" + op2), true); // append to the Global
+                                                                                        // declaration buffer
+          appendMainBuffer(storeLLVM("" + op2, "double", n.scope + n.name, "double", "8"), true); // load with a new
+                                                                                                  // value
+
+        } else if (n.type == Type.NUMBER) {
+          appendMainBuffer(storeLLVM("" + op2, "double", n.scope + n.name, "double", "8"), true); // load with a new
+                                                                                                  // value
+        }
+      } else if (x.type == Type.NUMBER) {
+        op2 = x.scope + x.name;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setGlobal();
+          appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); // append to the Global declaration
+                                                                                     // buffer
+          String reg = getRegister(); // get a new register
+          appendMainBuffer(loadLLVM("%" + reg, "double", "double", op2, "8"), true); // save the value of the var into
+                                                                                     // the register
+          appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true); // store new var with
+                                                                                                   // value pointed by
+                                                                                                   // the variable
+        } else if (n.type == Type.NUMBER) {
+          String reg = getRegister();
+          appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true);
+          appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true);
+
+        }
+      } else if (x.type == Type.RNUM) {
+        op2 = "%" + x.name;
+        if (n.type == null) {
+          n.setDouble(); // set type number in the variable
+          n.setGlobal();
+          appendGlobalDecBuffer(createGlovalVarLLVM(n.name, "double", "0.0"), true); // append to the Global declaration
+                                                                                     // buffer
+          appendMainBuffer(storeLLVM(op2, "double", n.scope + n.name, "double", "8"), true);
+        } else if (n.type == Type.NUMBER) {
+          appendMainBuffer(storeLLVM(op2, "double", n.scope + n.name, "double", "8"), true);
+        }
+      }
+
+      return n;
+    }
+
+    public ValueObj operation(String operation, ValueObj x, ValueObj y) { // type of operation, value of first operand,
+                                                                          // value of second operand
+      ValueObj RESULT = null; // final result to return
+      String a = null; // variables for registers
+      String b = null;
+      String r = null;
+      String op1 = null, op2 = null;
+
+      if (x.type == Type.IMMEDIATE && y.type == Type.IMMEDIATE) { // if both are immediates, perform operation at
+                                                                  // compile time
+        /// create switch
+        if (operation.compareTo("fadd") == 0)
+          RESULT = new ValueObj(x.value + y.value);
+        else if (operation.compareTo("fsub") == 0)
+          RESULT = new ValueObj(x.value - y.value);
+        else if (operation.compareTo("fmul") == 0)
+          RESULT = new ValueObj(x.value * y.value);
+        else if (operation.compareTo("fdiv") == 0)
+          RESULT = new ValueObj(x.value / y.value);
+        else if (operation.compareTo("pow") == 0)
+          RESULT = new ValueObj(Math.pow(x.value, y.value));
+
+        RESULT.type = Type.IMMEDIATE; // the returning value is itself a double
+      } else {
+
+        if (x.type == Type.NUMBER) {
+          a = getRegister();
+          appendMainBuffer(loadLLVM("%" + a, "double", "double", x.scope + x.name, "8"), true); // load value of first
+          op1 = "%" + a;
+        } else if (x.type == Type.IMMEDIATE) {
+          op1 = "" + x.value;
+        } else if (x.type == Type.RNUM) {
+          op1 = "%" + x.name;
+        }
+
+        if (y.type == Type.NUMBER) {
+          b = getRegister();
+          appendMainBuffer(loadLLVM("%" + b, "double", "double", y.scope + y.name, "8"), true); // load value of second
+          op2 = "%" + b;
+        } else if (y.type == Type.IMMEDIATE) {
+          op2 = "" + y.value;
+        } else if (y.type == Type.RNUM) {
+          op2 = "%" + y.name;
+        }
+        r = getRegister();
+        appendMainBuffer("%" + r + " = " + operation + " double " + op1 + ", " + op2, true); // perform operation and
+                                                                                             // save in register
+        RESULT = new ValueObj(r);
+        RESULT.setLocal();
+        RESULT.setRNUM();
+      }
+
+      return RESULT;
+    }
+
+    public ValueObj logicExpEval(String operation, ValueObj x, ValueObj y) {
+
+      String op1 = null;
+      String op2 = null;
+      if (x.type == Type.IMMEDIATE) { // if first operand is and immediate
+        op1 = "" + x.value; // just store the value
+      } else if (x.type == Type.NUMBER) { // if it is a var
+        String reg = getRegister();
+        // loadLLVM(String outName, String outType, String inputType, String inputName,
+        // String align )
+        appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true); // load it
+        op1 = "%" + reg; // save register where it is loaded
+      } else if (x.type == Type.RNUM) {
+        op1 = x.scope + x.name;
+
+      }
+      if (y.type == Type.IMMEDIATE) { // same as first operand
+        op2 = "" + y.value;
+      } else if (y.type == Type.NUMBER) {
+        String reg = getRegister();
+        appendMainBuffer(loadLLVM("%" + reg, "double", "double", y.scope + y.name, "8"), true);
+        op2 = "%" + reg;
+      } else if (y.type == Type.RNUM) {
+        op2 = y.scope + y.name;
+      }
+      String result = getRegister(); // get register for output
+      appendMainBuffer("%" + result + " = fcmp " + operation + " double " + op1 + ", " + op2, true); // calculate result
+      ValueObj RESULT = new ValueObj(result); // return new value
+      RESULT.setBool();
+      RESULT.setLocal();
+
+      return RESULT;
+
+    }
+
+    public int genLabelString() {
+      return indexString++;
+    }
+
+    private void printStrings() {
+
+      stringDecl.append("declare i32 @printf(i8*, ...)\n"); // declare printf instruction
+      System.out.println(stringList.size());
+      for (int i = 0; i < stringList.size(); i++) {
+
+        String s = stringList.get(i);
+        s = s.substring(1, s.length() - 1);
+        int length = s.length();
+        if (!s.contains("\\n"))
+          length++;
+        s = s.replace("\\n", "\\0A");
+        s = s + "\\00";
+        stringDecl.append("@.str." + i + " = private constant [" + length + " x i8] c\"" + s + "\", align 1\n");
+      }
+
+    }
+
+
+
 
   private final parser parser;
 
@@ -2088,6 +2099,7 @@ class CUP$parser$actions {
               Object RESULT =null;
   currentSymTable = new SymbolTable(currentSymTable, false); 
                     loopCount = ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
+                    System.out.println("loop pushed n: "+loopCount);
                 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$11",43, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
@@ -2121,21 +2133,33 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 71: // if_block ::= IF NT$11 loop_cond NT$12 THEN NT$13 stmt_list else_block END 
+          case 71: // NT$14 ::= 
             {
-              Object RESULT =null;
-              // propagate RESULT from NT$13
-                RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-3)).value;
-		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-6)).left;
-		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-6)).right;
-		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-6)).value;
-
-              CUP$parser$result = parser.getSymbolFactory().newSymbol("if_block",13, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-8)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+              Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
+		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).left;
+		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).right;
+		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-4)).value;
+loopCount=loopList.pop();
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$14",46, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 72: // if_block ::= IF error else_block END 
+          case 72: // if_block ::= IF NT$11 loop_cond NT$12 THEN NT$13 stmt_list NT$14 else_block END 
+            {
+              Object RESULT =null;
+              // propagate RESULT from NT$14
+                RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
+		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-7)).left;
+		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-7)).right;
+		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-7)).value;
+
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("if_block",13, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-9)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+            }
+          return CUP$parser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 73: // if_block ::= IF error else_block END 
             {
               Object RESULT =null;
 		 System.out.println("error");
@@ -2144,52 +2168,54 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 73: // NT$14 ::= 
+          case 74: // NT$15 ::= 
             {
               Object RESULT =null;
  
                      appendMainBuffer(("br label %if.exit." + loopCount), true);
-                
-              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$14",46, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
-            }
-          return CUP$parser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 74: // NT$15 ::= 
-            {
-              Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
- 
-                    appendMainBuffer(("if.else." + loopCount + ":"), true); 
-                    
                 
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$15",47, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 75: // else_block ::= NT$14 ELSE NT$15 stmt_list 
+          case 75: // NT$16 ::= 
+            {
+              Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
+ 
+                    appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                    loopList.push(loopCount);
+                
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$16",48, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+            }
+          return CUP$parser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 76: // else_block ::= NT$15 ELSE NT$16 stmt_list 
             {
               Object RESULT =null;
-              // propagate RESULT from NT$15
+              // propagate RESULT from NT$16
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
 		
-                    loopList.push(loopCount);
+                   
+                     loopCount=loopList.pop();
                     appendMainBuffer(("br label %if.exit." + loopCount), true);
                     appendMainBuffer(("if.exit." + loopCount + ":"), true);
                     currentSymTable=currentSymTable.getPrev(true);
+                    
+                    System.out.println("loop popped n: "+loopCount);
                     
               CUP$parser$result = parser.getSymbolFactory().newSymbol("else_block",14, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 76: // else_block ::= 
+          case 77: // else_block ::= 
             {
               Object RESULT =null;
 		
-                        loopCount=loopList.pop();//restore it when statement is finished
                         appendMainBuffer(("br label %if.else." + loopCount), true);
-                        appendMainBuffer(("if.else." + loopCount + ":"), true);   
+                        appendMainBuffer(("if.else." + loopCount + ":"), true); 
                         currentSymTable=currentSymTable.getPrev(true);
                     
               CUP$parser$result = parser.getSymbolFactory().newSymbol("else_block",14, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -2197,7 +2223,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 77: // func_decl_param ::= var_list 
+          case 78: // func_decl_param ::= var_list 
             {
               Object RESULT =null;
 
@@ -2206,7 +2232,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 78: // func_decl_param ::= 
+          case 79: // func_decl_param ::= 
             {
               Object RESULT =null;
 
@@ -2215,7 +2241,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 79: // func_list ::= 
+          case 80: // func_list ::= 
             {
               Object RESULT =null;
 
@@ -2224,7 +2250,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 80: // func_list ::= func_list function_decl 
+          case 81: // func_list ::= func_list function_decl 
             {
               Object RESULT =null;
 
@@ -2233,19 +2259,19 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 81: // NT$16 ::= 
+          case 82: // NT$17 ::= 
             {
               Object RESULT =null;
  currentSymTable = new SymbolTable(currentSymTable, true); //use new symbol table
                               currentSymTable.currentBuffer=funcBuffer; //set buffer to func buffer
 
                  
-              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$16",48, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$17",49, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 82: // NT$17 ::= 
+          case 83: // NT$18 ::= 
             {
               Object RESULT =(Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-4)).value;
 		int fNameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
@@ -2288,15 +2314,15 @@ class CUP$parser$actions {
                     
                     currentSymTable.varList.clear();  //clear var list
                     
-              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$17",49, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$18",50, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 83: // function_decl ::= FUNCTION NT$16 ID RO func_decl_param RC NT$17 stmt_list END 
+          case 84: // function_decl ::= FUNCTION NT$17 ID RO func_decl_param RC NT$18 stmt_list END 
             {
               Object RESULT =null;
-              // propagate RESULT from NT$17
+              // propagate RESULT from NT$18
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
 		int fNameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-6)).left;
 		int fNameright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-6)).right;
@@ -2310,7 +2336,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 84: // ret ::= RETURN exp 
+          case 85: // ret ::= RETURN exp 
             {
               Object RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
@@ -2336,7 +2362,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 85: // print_func ::= PRINT RO STRING RC 
+          case 86: // print_func ::= PRINT RO STRING RC 
             {
               Object RESULT =null;
 		int valueleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).left;
@@ -2363,22 +2389,22 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 86: // NT$18 ::= 
+          case 87: // NT$19 ::= 
             {
               Object RESULT =null;
 		int valueleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).left;
 		int valueright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).right;
 		String value = (String)((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-1)).value;
  RESULT = new ArrayList<ValueObj>(); 
-              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$18",50, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$19",51, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 87: // print_func ::= PRINT RO STRING CM NT$18 func_param_list RC 
+          case 88: // print_func ::= PRINT RO STRING CM NT$19 func_param_list RC 
             {
               Object RESULT =null;
-              // propagate RESULT from NT$18
+              // propagate RESULT from NT$19
                 RESULT = (Object) ((java_cup.runtime.Symbol) CUP$parser$stack.elementAt(CUP$parser$top-2)).value;
 		int valueleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).left;
 		int valueright = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).right;
@@ -2435,7 +2461,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 88: // func_param_list ::= func_param_list CM exp 
+          case 89: // func_param_list ::= func_param_list CM exp 
             {
               ArrayList<ValueObj> RESULT =null;
 		int xleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).left;
@@ -2451,7 +2477,7 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 89: // func_param_list ::= exp 
+          case 90: // func_param_list ::= exp 
             {
               ArrayList<ValueObj> RESULT =null;
 		int yleft = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).left;
@@ -2465,7 +2491,18 @@ class CUP$parser$actions {
           return CUP$parser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 90: // func_call ::= ID RO func_param_list RC 
+          case 91: // func_param_list ::= 
+            {
+              ArrayList<ValueObj> RESULT =null;
+		 RESULT= new ArrayList<ValueObj>();
+                                
+                                
+              CUP$parser$result = parser.getSymbolFactory().newSymbol("func_param_list",31, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
+            }
+          return CUP$parser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 92: // func_call ::= ID RO func_param_list RC 
             {
               Object RESULT =null;
 		int fNameleft = ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-3)).left;
