@@ -1,6 +1,7 @@
 default: clean scanner parser
 
 	javac *.java
+	
 
 scanner:
 	jflex --skel skeleton.nested scanner.jflex
@@ -10,7 +11,7 @@ parser:
 	
 clean:
 
-	rm -fr parser.java scanner.java sym.java
+	rm -fr parser.java scanner.java sym.java Yylex.java
 	rm -vfr *.class
 	rm -vfr *.*~
 	
@@ -18,6 +19,6 @@ init:
 	mkdir source build
 	
 run:
-	java Main hello.go
+	java Main ArrayOutOfBounds.lua
 
 new: default run
