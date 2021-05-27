@@ -3,7 +3,7 @@ default: clean scanner parser
 	javac *.java
 
 scanner:
-	jflex scanner.jflex
+	jflex --skel skeleton.nested scanner.jflex
 	
 parser:
 	java java_cup.Main parser.cup

@@ -1,12 +1,16 @@
 /*
-Implemented:
--Single global variable initialization with a NUMBER or with another var
 
+TO IMPLEMENT: ASSIGN AN ARRAY TO A VARIABLE AND RELATIVE ERRORS
 
 NOTICE: for now, inside the functions we can just declare local variables.
 
-TO impement capture of return value
-problem with for loop in bubble sort
+TO Implement array out of bounds
+
+TO impement pass of array to funciont
+
+TO modify loop condition, not i<0 but just a number or variable or array element
+
+TO do local arrays
 */
 
 import java_cup.runtime.*;
@@ -34,6 +38,8 @@ init with {:
    stringList = new ArrayList<String>();
    stringDecl = new StringBuffer();
    funcTable = new HashMap<String, FuncObj>();
+   libraryName = "";
+   requiredFileList=new ArrayList<String>();
    /*Structure:
    Global buffer
    Function buffer
@@ -54,10 +60,12 @@ parser code {:
   public int loopCount;
   public int totLoopCount;
   public LinkedList<Integer> loopList;
+  public ArrayList<String> requiredFileList;
   public int indexString;
   public ArrayList<String> stringList;
   public StringBuffer stringDecl;
   public HashMap<String, FuncObj> funcTable;
+  static public String libraryName;
 
   public enum Type {
     NUMBER, TABLE, IMMEDIATE, RNUM, BOOL
@@ -533,17 +541,18 @@ action code{:
 
 //Terminal tokens
 terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, NOT, SO, SC, EQ, NOTEQ;
-terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM;
+terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM, REQUIRE, FNF;
 terminal DO, FOR, IF, ELSE, THEN, END, LOCAL;
 terminal  NIL, STRFRT;
 terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
-terminal String ID, STRING;
+terminal String ID, STRING, FILE;
 terminal Double NUMBER;
+
 //Non terminal tokens
 non terminal global_var_init, local_var, block, array_declaration;
 non terminal  local_var_init, local_var_list, var_list, ass_list;
 non terminal for_loop, stmt_list, stmt;
-non terminal while_loop, repeat_loop, if_block, else_block, ret;
+non terminal while_loop, repeat_loop, if_block, else_block, ret, include, includeList  ;
 non terminal func_decl_param, print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, declaration;
 non terminal ValueObj var;
 non terminal ValueObj ass_exp, loop_cond, exp, assignment;
@@ -566,6 +575,8 @@ precedence right HAT;
 start with prog;
 
 
+
+
 prog ::= stmt_list  {:
         printStrings();
         bwr.write(stringDecl.toString()+"\n");
@@ -585,7 +596,16 @@ prog ::= stmt_list  {:
 	
 :};
 
+//includeList ::= includeList include | ;
 
+include ::= REQUIRE FILE:x {: libraryName=x; 
+                              if(requiredFileList.contains(x)){
+                                  pSemError("FILE ALREADY INCLUDED");
+                              }
+                              requiredFileList.add(x); :} | REQUIRE FNF {: pSynWarning("REQUIRED FILE NOT FOUND");:} | REQUIRE error {: pSynError("REQUIRED FILE NOT SPECIFIED");:}
+
+
+;
 /*****************************/
 /**** DECLARATIONS ****/
 /*****************************/
@@ -601,7 +621,7 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment |
 
 stmt_list ::= stmt_list stmt | stmt ;
 
-stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block | function_decl;
+stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block | function_decl | include;
 
 
 /* expressions: 
@@ -761,7 +781,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         Integer dim = currentSymTable.expList.size();
                     //    @a = common dso_local global [5 x double] zeroinitializer, align 16
                     //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
-                    String type="["+dim+"x double]";
+                    String type="["+dim+" x double]";
                     appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
                     n.type=Type.TABLE;
                     n.nElement=dim;
@@ -772,7 +792,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
                         // %2 = getelementptr inbounds [9 x i32], [9 x i32]* %1, i32 0, i32 7
                         String reg = getRegister();
-                        String arrayType=" [" + dim +"x double]";
+                        String arrayType=" [" + dim +" x double]";
                         appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ n.scope+n.name+", i32 0, i32 " + i, true);
                         ValueObj arrayCell = new ValueObj(reg);
                         arrayCell.setLocal();
@@ -792,7 +812,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         Integer dim = currentSymTable.expList.size();
                     //    @a = common dso_local global [5 x double] zeroinitializer, align 16
                     //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
-                    String type="["+dim+"x double]";
+                    String type="["+dim+" x double]";
                     appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
                     n.type=Type.TABLE;
                     n.nElement=dim;
@@ -803,7 +823,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
                         // %2 = getelementptr inbounds [9 x i32], [9 x i32]* %1, i32 0, i32 7
                         String reg = getRegister();
-                        String arrayType=" [" + dim +"x double]";
+                        String arrayType=" [" + dim +" x double]";
                         appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ n.scope+n.name+", i32 0, i32 " + i, true);
                         ValueObj arrayCell = new ValueObj(reg);
                         arrayCell.setLocal();
@@ -812,7 +832,39 @@ array_declaration ::= var:n EQ BO ass_list BC {:
 
                     }
                     currentSymTable.expList.clear();
-                    } :}
+                    } :}|var:n EQ BO  BC {:
+
+                    if(currentSymTable.get(n.name) != null){
+                         pSemError("VARIABLE " +"\""+n.name+"\"" +" ALREADY DECLARED: CANNOT REDECLARE VARIABLE TO ARRAY");
+                    }else{
+                        Integer dim = currentSymTable.expList.size();
+                        System.out.println(dim);
+                    //    @a = common dso_local global [5 x double] zeroinitializer, align 16
+                    //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
+                    String type="["+dim+" x double]";
+                    appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
+                    n.type=Type.TABLE;
+                    n.nElement=dim;
+                    n.setGlobal();
+                    globalSymbolTable.varTable.put(n.name, n);
+
+                    for(int i = 0; i<dim; i++){
+                        //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
+                        // %2 = getelementptr inbounds [9 x i32], [9 x i32]* %1, i32 0, i32 7
+                        String reg = getRegister();
+                        String arrayType=" [" + dim +" x double]";
+                        appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ n.scope+n.name+", i32 0, i32 " + i, true);
+                        ValueObj arrayCell = new ValueObj(reg);
+                        arrayCell.setLocal();
+                        arrayCell.type=Type.NUMBER;
+                        initVar(arrayCell, currentSymTable.expList.get(i));
+
+                    }
+                    currentSymTable.expList.clear();
+                    }
+
+
+:}
 
 
 ;
@@ -887,7 +939,7 @@ var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in
 
                                 
                                     String reg = getRegister();
-                                    String arrayType=" [" + tmp.nElement +"x double]";   
+                                    String arrayType=" [" + tmp.nElement +" x double]";   
                                     appendMainBuffer("%"+reg+ " = " + "getelementptr inbounds" + arrayType+","+arrayType+"*"+ tmp.scope+tmp.name+", i32 0, i32 " + index, true); //get address of the array cell
                                     ValueObj arrayCell = new ValueObj(reg); //create a new object to store the register containing the reference
                                     arrayCell.setLocal();
@@ -984,7 +1036,10 @@ while_loop ::= WHILE {: currentSymTable = new SymbolTable(currentSymTable, false
                     :}
                     
                     
-                    | WHILE error stmt_list END{: pSynWarning("MISSING \"DO\"");:};
+                    | WHILE error stmt_list END{: pSynWarning("MISSING \"DO\"");:}
+                    
+                    
+                    ;
 
 
 //repeat-until loop
@@ -1054,7 +1109,10 @@ function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable,
                               currentSymTable.currentBuffer=funcBuffer; //set buffer to func buffer
 
                  :}ID:fName RO func_decl_param RC {:
-
+                    if(!libraryName.isBlank()){  //to account for module functions
+                         fName=libraryName+"."+fName;
+                    }
+                   
                     if(funcTable.containsKey(fName)){
                         pSemError("FUNCTION ALREADY DECLARED");
                     }
@@ -1260,7 +1318,11 @@ func_param_list ::= func_param_list:x CM exp:y {: RESULT=x;
 
 func_call ::= ID:fName RO  func_param_list:x RC {: //function invocation
                                                 if(!funcTable.containsKey(fName)){ //if function is not declared
-                                                     pSemError("FUNCTION "+fName+" NOT DECLARE, CANNOT INVOKE IT");                                                    
+                                                    if(libraryName.isBlank()){
+                                                        pSemError("FUNCTION "+fName+" NOT DECLARE, CANNOT INVOKE IT"); 
+                                                    }else{
+                                                        fName=libraryName+"."+fName;
+                                                    }                                                 
                                                 }
                                                 FuncObj func = funcTable.get(fName);
                                                 if(func.nargsTot != x.size()){ //if parameters passed do not coincide with declaration
@@ -1279,6 +1341,10 @@ func_call ::= ID:fName RO  func_param_list:x RC {: //function invocation
                                                         String reg1 = getRegister(); //load the register
                                                         appendMainBuffer(loadLLVM("%"+reg1, "double", "double", param.scope+param.name, "8"), true);
                                                         parameters.append("double %"+reg1); //and attach theregister
+                                                    }else if(param.type==Type.TABLE){
+                                                        pSynError("TRYING TO PASS A TABLE TO A FUNCTION -- NOT ALLOWED HERE");
+                                                        //parameters.append("double "+param.scope+param.name); //append the register
+
                                                     }
                                                     if(i!=func.nargsTot-1){
                                                         parameters.append(", ");

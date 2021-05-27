@@ -3,7 +3,7 @@ size = 10
 swapped = 1 
 
 a=0
-while(a~=size)do
+while a~=size do
     print("%.0f ", v[a])
     a=a+1
 end
