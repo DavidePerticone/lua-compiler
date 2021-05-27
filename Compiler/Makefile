@@ -3,10 +3,10 @@ default: clean scanner parser
 	javac *.java
 
 scanner:
-	jflex go_scanner.jflex
+	jflex --skel skeleton.nested scanner.jflex
 	
 parser:
-	java java_cup.Main -expect 3 -parser parser go_parser.cup
+	java java_cup.Main parser.cup
 	
 clean:
 
