@@ -4,13 +4,17 @@ TO IMPLEMENT: ASSIGN AN ARRAY TO A VARIABLE AND RELATIVE ERRORS
 
 NOTICE: for now, inside the functions we can just declare local variables.
 
-TO Implement array out of bounds
+TO Implement array out of bounds //FIX BUG
 
 TO impement pass of array to funciont
 
 TO modify loop condition, not i<0 but just a number or variable or array element
 
 TO do local arrays
+
+To use inherited attributes
+
+Add support of array swapping
 */
 
 import java_cup.runtime.*;
@@ -25,28 +29,55 @@ import java.io.FileWriter;
 import java.util.LinkedList;
 
 init with {:
-   currentSymTable = globalSymbolTable = new parser.SymbolTable(null, false); //Main symbol table for global variables included in all scopes
-   funcBuffer = new StringBuffer(); //buffer for function declaration
-   globalDecBuffer = new StringBuffer(); //buffer for global var declaration
-   mainBuffer = new StringBuffer(); //buffer used for main function
+    /* Main symbol table for global variables included in all scopes */
+   currentSymTable = globalSymbolTable = new parser.SymbolTable(null, false); 
+
+    /* buffer for function declaration */
+   funcBuffer = new StringBuffer();
+
+   /* buffer for global var declaration */
+   globalDecBuffer = new StringBuffer(); 
+
+   /* buffer used for main function */
+   mainBuffer = new StringBuffer(); 
+
+   /* initially set the mainBuffer as the current one, will 
+    * be changed when entering in a function 
+    */
    currentSymTable.currentBuffer=mainBuffer;
-   bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); //output file
+
+   /* final output file */
+   bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); 
+
+   /* loopCount needed to count nested loops */
    loopCount = 0;
+
+   /* Need to keep track of number of labels for loop */
    totLoopCount = 0;
+
+   /* Stack used to keep track of loop number in nested loop */
    loopList=new LinkedList<Integer>();
+
+   /* Counter used for numbering strings */
    indexString = 0;
+
+   /* List of string that will be append at beginning of output file */
    stringList = new ArrayList<String>();
+
+   /* String declaration buffer that is used to declare strings and append to file */
    stringDecl = new StringBuffer();
+
+   /* Symbol table for function: keeps track of functions name to detect duplicates */
    funcTable = new HashMap<String, FuncObj>();
+
+   /* Used to construct function names like libraryName.functionName
+    * When not parsing a library, the name is "" because we are in the main file
+    */
    libraryName = "";
+   
+   /* List used to keep track of of the libraries already inserted and detect duplicates */
    requiredFileList=new ArrayList<String>();
-   /*Structure:
-   Global buffer
-   Function buffer
-   main buffer
 
-
-   */
 :};
 
 
@@ -543,17 +574,17 @@ action code{:
 terminal MIN, UMIN, MAJ, MIN_EQ, MAJ_EQ, AND, OR, NOT, SO, SC, EQ, NOTEQ;
 terminal RO, RC, BO, BC, PLUS, MINUS, STAR, DIV, HAT, CM, REQUIRE, FNF;
 terminal DO, FOR, IF, ELSE, THEN, END, LOCAL;
-terminal  NIL, STRFRT;
+terminal NIL, STRFRT;
 terminal WHILE, REPEAT, UNTIL, FUNCTION, RETURN, PRINT;
 terminal String ID, STRING, FILE;
 terminal Double NUMBER;
 
 //Non terminal tokens
-non terminal global_var_init, local_var, block, array_declaration;
-non terminal  local_var_init, local_var_list, var_list, ass_list;
+non terminal global_var_init, block, array_declaration;
+non terminal local_var_init, local_var_list, var_list, ass_list;
 non terminal for_loop, stmt_list, stmt;
-non terminal while_loop, repeat_loop, if_block, else_block, ret, include, includeList  ;
-non terminal func_decl_param, print_func_args, func_list, instr_list, prog, finish, function_decl, print_func, declaration;
+non terminal while_loop, repeat_loop, if_block, else_block, ret, include;
+non terminal func_decl_param, prog, function_decl, print_func, declaration;
 non terminal ValueObj var;
 non terminal ValueObj ass_exp, loop_cond, exp, assignment;
 non terminal ArrayList<ValueObj> func_param_list;
@@ -578,39 +609,42 @@ start with prog;
 
 
 prog ::= stmt_list  {:
-        printStrings();
-        bwr.write(stringDecl.toString()+"\n");
-		bwr.write(globalDecBuffer.toString()+"\n");
-        bwr.write(funcBuffer.toString()+"\n");
-	    bwr.write("define void @main(){\n");
-        bwr.write(mainBuffer.toString());
-	
-	
-		bwr.write("ret void\n}");
-		bwr.flush();
- 
-		//close the stream
-		bwr.close();
-	
-	
-	
-:};
+                      printStrings();
+                      bwr.write(stringDecl.toString()+"\n");
+                      bwr.write(globalDecBuffer.toString()+"\n");
+                      bwr.write(funcBuffer.toString()+"\n");
+                      bwr.write("define void @main(){\n");
+                      bwr.write(mainBuffer.toString());
+                      bwr.write("ret void\n}");
+                      bwr.flush();
+                      //close the stream
+                      bwr.close();
+	                  :}
+;
 
 //includeList ::= includeList include | ;
 
-include ::= REQUIRE FILE:x {: libraryName=x; 
-                              if(requiredFileList.contains(x)){
+include ::= REQUIRE FILE:x  {:  libraryName=x; 
+                                if(requiredFileList.contains(x)){
                                   pSemError("FILE ALREADY INCLUDED");
-                              }
-                              requiredFileList.add(x); :} | REQUIRE FNF {: pSynWarning("REQUIRED FILE NOT FOUND");:} | REQUIRE error {: pSynError("REQUIRED FILE NOT SPECIFIED");:}
-
-
+                                }
+                                requiredFileList.add(x); 
+                            :} 
+                              
+                              | REQUIRE FNF {: pSynWarning("REQUIRED FILE NOT FOUND"); :} 
+                              | REQUIRE error {: pSynError("REQUIRED FILE NOT SPECIFIED"); :}
 ;
+
 /*****************************/
 /**** DECLARATIONS ****/
 /*****************************/
 
-declaration ::= local_var_init | local_var_list | global_var_init | assignment | array_declaration;
+declaration ::=   local_var_init 
+                | local_var_list 
+                | global_var_init 
+                | assignment 
+                | array_declaration             
+;
 
 
 /**********************/
@@ -619,9 +653,22 @@ declaration ::= local_var_init | local_var_list | global_var_init | assignment |
 
 
 
-stmt_list ::= stmt_list stmt | stmt ;
+stmt_list ::=   stmt_list stmt 
+              | stmt 
+;
 
-stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | while_loop | repeat_loop | block | function_decl | include;
+stmt ::=    if_block 
+          | for_loop 
+          | print_func 
+          | ret 
+          | declaration 
+          | func_call  
+          | while_loop 
+          | repeat_loop 
+          | block
+          | function_decl 
+          | include
+;
 
 
 /* expressions: 
@@ -632,7 +679,7 @@ stmt ::= if_block | for_loop | print_func | ret | declaration | func_call  | whi
 */
 
 exp ::= RO exp:x RC {: RESULT = x; :}
-| NUMBER:x {:
+      | NUMBER:x {:
                 RESULT=new ValueObj(x);
 
             :}
@@ -880,6 +927,8 @@ assignment ::= var:n EQ ass_exp:x {:
 		                    globalSymbolTable.varTable.put(n.name, n);//TO DO: need to distinguish here between local and global var
                             RESULT = initVar(n, x);
                         }else{ //if it is declared or it is an array cell
+
+                  
                             if(n.nElement != null){
                                 RESULT = initVar(n, x); //if is is an array cell
                             }else{
@@ -907,8 +956,16 @@ var_list ::= var_list CM var:x {:  currentSymTable.varList.add(x) ;    :} //Stor
  ;
 
 //simple var
-var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in the symbol table, otherwise would be sufficient to write a to have a variable
-                                        //avoids things like a=b where b is not previously declared
+var ::= ID:n  {: 
+
+                   /* 
+                    * var does not put the variable in the symbol table, otherwise would 
+                    * be sufficient to write a to have a variable
+                    * avoids things like a=b where b is not previously declared 
+                    */
+                  
+                  RESULT = new ValueObj(n);  
+              :} 
 
 
         | ID:x SO exp:i SC {: //INSERT ARRAY OUT OF BOUNDS CHECKSSSS
@@ -918,11 +975,16 @@ var ::= ID:n {: RESULT = new ValueObj(n);  :} //var does not put the variable in
                              pSemError("ARRAY " +"\""+x+"\"" +" NOT DECLARED, CANNOT ACCESS ARRAY ELEMENT");
                               
                             }else{
-                                
+                                ///////FIX BUG HERE
                                 if(tmp.type == Type.TABLE){ //we check if the variable ID is a table
                                     String index=null;
                                     if(i.type == Type.IMMEDIATE){ //if the index is an immediate
-                                        index=String.valueOf(i.value.intValue()); //just use its value
+                                        index=String.valueOf(i.value.intValue()-1); //just use its value
+                                        
+                                        /* Consider the offset -> in Lua arrays start from index 1 */
+                                        if(i.value.intValue()-1 < 0 || i.value.intValue()-1 >= tmp.nElement ){
+                                          pSemError("ARRAY INDEX OUT OF BOUNDS");
+                                        }
                                     }else if(i.type == Type.NUMBER){ //if it is a number
                                     String reg=getRegister();
                                     String reg2=getRegister();
@@ -1104,7 +1166,7 @@ else_block ::= {:
 
 func_decl_param ::= var_list | ;
 
-func_list ::= | func_list function_decl;
+
 function_decl ::= FUNCTION {: currentSymTable = new SymbolTable(currentSymTable, true); //use new symbol table
                               currentSymTable.currentBuffer=funcBuffer; //set buffer to func buffer
 
@@ -1316,7 +1378,7 @@ func_param_list ::= func_param_list:x CM exp:y {: RESULT=x;
                                 :} ;
 
 
-func_call ::= ID:fName RO  func_param_list:x RC {: //function invocation
+func_call ::= ID:fName RO  func_param_list:x RC {: //function invocatio
                                                 if(!funcTable.containsKey(fName)){ //if function is not declared
                                                     if(libraryName.isBlank()){
                                                         pSemError("FUNCTION "+fName+" NOT DECLARE, CANNOT INVOKE IT"); 
@@ -1329,6 +1391,8 @@ func_call ::= ID:fName RO  func_param_list:x RC {: //function invocation
                                                      pSemError("WRONG NUMBER OF PARAMETERS IN FUNCTION "+fName);
                                                    
                                                 }
+
+                                                
                                                 
                                                 StringBuffer parameters = new StringBuffer();
                                                 for(int i = 0; i<func.nargsTot; i++){ //loop through the parameters 

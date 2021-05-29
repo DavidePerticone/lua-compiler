@@ -112,7 +112,7 @@ FILE = \"[A-Za-z_][A-Za-z0-9_\.]*\"
 {id}\.{id} {return symbol(sym.ID, yytext());}
 {id}      {return symbol(sym.ID, yytext());}
 {string}  {return symbol(sym.STRING, yytext());}
-{number}  {return symbol(sym.NUMBER, new Double(yytext()));}
+{number}  {return symbol(sym.NUMBER, Double.valueOf(yytext()));}
 
 
 {nl} {;}
