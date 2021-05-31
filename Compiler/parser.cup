@@ -74,7 +74,7 @@ init with {:
     * When not parsing a library, the name is "" because we are in the main file
     */
    libraryName = "";
-   
+
    /* List used to keep track of of the libraries already inserted and detect duplicates */
    requiredFileList=new ArrayList<String>();
 
@@ -98,19 +98,34 @@ parser code {:
   public HashMap<String, FuncObj> funcTable;
   static public String libraryName;
 
+    /*
+     * NUMBER: whichever variable that stores a NUMBER and addressed with a pointer
+     * TABLE:  whichever variable thast stores a TABLE
+     * IMMEDIATE: an immediate value
+     * RVALUE: a register containing a NUMBER
+     * BOOL: a register containing a boolean value
+     */
   public enum Type {
-    NUMBER, TABLE, IMMEDIATE, RNUM, BOOL
-  }; // different types of values NUMBER means that the value is assigned to a var
-     // and is of type NUMBER, IMMEDIATE means it is a immediate read from file
+    NUMBER, TABLE, IMMEDIATE, RVALUE, BOOL
+  }; 
 
   public class SymbolTable {
+    /* Used in multiple assignment */
     public ArrayList<ValueObj> varList;
+    /* Used in multiple assignment */
     public ArrayList<ValueObj> expList;
+    /* Actual Symbol table storing NAME : VALUE */
     public HashMap<String, ValueObj> varTable;
-    public int nargs;
+    /* Counter of llvm registers */
     public Integer registerCount; // used as counter for SSA registers
+    /* reference to previous symbol table - used in local scopes */
     SymbolTable prev;
+    /* stores the current buffer to append to */
     StringBuffer currentBuffer;
+    /* 
+     *boolean storing if we are in a function or not
+     * needed to distinguish closure from functions
+     */
     boolean isFunc;
 
     public SymbolTable getPrev(boolean insideSameFunction) {
@@ -122,24 +137,45 @@ parser code {:
       }
     }
 
-    public SymbolTable(SymbolTable p, boolean isFunction) { // isFunction is needed to distinguish closure from
-                                                            // functions
+    /*
+     * isFunction is needed to distinguish closure from functions
+     */
+    public SymbolTable(SymbolTable p, boolean isFunction) { 
       this.varTable = new HashMap<String, ValueObj>();
       this.varList = new ArrayList<ValueObj>();
       this.expList = new ArrayList<ValueObj>();
-      this.nargs = 0;
       this.prev = p;
-      this.registerCount = p == null ? 1 : p.registerCount; // if it the main table, start reg from 1
-      currentBuffer = p == null ? currentBuffer : p.currentBuffer; // set buffer main buffer
+
+      /*
+       * when starting parsing, register counter start from 1
+       * when entering a closure, continue with previous counter
+       */
+
+      this.registerCount = p == null ? 1 : p.registerCount; 
+
+      /*
+       * when starting parsing, set current buffer to main buffer
+       * when entering a closure, continue with previous buffer
+       */
+
+      currentBuffer = p == null ? currentBuffer : p.currentBuffer; 
       isFunc=false;
       if (isFunction) {
-        registerCount = 1; // if it is a funct, restart from 1
-        currentBuffer = funcBuffer; // as it is a func, use func buffer
+        /* if it is a funct, restart from 1 */
+        registerCount = 1; 
+        /* as it is a func, use func buffer */
+        currentBuffer = funcBuffer; 
         isFunc=true;
       }
     }
 
     public ValueObj get(String s) {
+      /*
+       * Given an id, look for it in the current symbol table
+       * and in all the ones above
+       */
+
+
       for (SymbolTable sym = this; sym != null; sym = sym.prev) {
         ValueObj found = sym.varTable.get(s);
         if (found != null)
@@ -150,12 +186,16 @@ parser code {:
   }
 
   public class ValueObj {
-
+    /* stores value for immediates */
     Double value;
+    /* register or variable name used in llvm code */
     public String name;
+    /* type of variable */
     public Type type;
+    /* scope: either local % or global @ */
     public String scope;
-    Integer nElement; // for arrrays
+    /* length of array in case of table, null otherwise */
+    Integer nElement; 
 
     public ValueObj(String name) {
       super();
@@ -180,8 +220,8 @@ parser code {:
       scope = "%";
     }
 
-    public void setRNUM() {
-      this.type = Type.RNUM;
+    public void setRVALUE() {
+      this.type = Type.RVALUE;
     }
 
     public void setBool() {
@@ -370,7 +410,7 @@ action code{:
           appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true);
 
         }
-      } else if (x.type == Type.RNUM) {
+      } else if (x.type == Type.RVALUE) {
         op2 = "%" + x.name;
         if (n.type == null) {
           n.setDouble(); // set type number in the variable
@@ -429,7 +469,7 @@ action code{:
           appendMainBuffer(storeLLVM("%" + reg, "double", n.scope + n.name, "double", "8"), true);
 
         }
-      } else if (x.type == Type.RNUM) {
+      } else if (x.type == Type.RVALUE) {
         op2 = "%" + x.name;
         if (n.type == null) {
           n.setDouble(); // set type number in the variable
@@ -482,7 +522,7 @@ action code{:
           op1 = "%" + a;
         } else if (x.type == Type.IMMEDIATE) {
           op1 = "" + x.value;
-        } else if (x.type == Type.RNUM) {
+        } else if (x.type == Type.RVALUE) {
           op1 = "%" + x.name;
         }
 
@@ -492,7 +532,7 @@ action code{:
           op2 = "%" + b;
         } else if (y.type == Type.IMMEDIATE) {
           op2 = "" + y.value;
-        } else if (y.type == Type.RNUM) {
+        } else if (y.type == Type.RVALUE) {
           op2 = "%" + y.name;
         }
         r = getRegister();
@@ -500,7 +540,7 @@ action code{:
                                                                                              // save in register
         RESULT = new ValueObj(r);
         RESULT.setLocal();
-        RESULT.setRNUM();
+        RESULT.setRVALUE();
       }
 
       return RESULT;
@@ -518,7 +558,7 @@ action code{:
         // String align )
         appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true); // load it
         op1 = "%" + reg; // save register where it is loaded
-      } else if (x.type == Type.RNUM) {
+      } else if (x.type == Type.RVALUE) {
         op1 = x.scope + x.name;
 
       }
@@ -528,7 +568,7 @@ action code{:
         String reg = getRegister();
         appendMainBuffer(loadLLVM("%" + reg, "double", "double", y.scope + y.name, "8"), true);
         op2 = "%" + reg;
-      } else if (y.type == Type.RNUM) {
+      } else if (y.type == Type.RVALUE) {
         op2 = y.scope + y.name;
       }
       String result = getRegister(); // get register for output
@@ -703,7 +743,7 @@ exp ::= RO exp:x RC {: RESULT = x; :}
 
                               :}
 | func_call:x {: ValueObj retValue = new ValueObj(x);
-                 retValue.setRNUM();
+                 retValue.setRVALUE();
                  retValue.setLocal();
                  RESULT=retValue;
                 :}
@@ -992,7 +1032,7 @@ var ::= ID:n  {:
                                      //%X = fptosi double -123.0 to i32
                                     appendMainBuffer("%"+reg2+ " = " + "fptosi double "+"%"+reg+" to i32", true); //cast it to int32
                                     index="%"+reg2;
-                                    }else if(i.type == Type.RNUM){  //if it is a register with a number in it
+                                    }else if(i.type == Type.RVALUE){  //if it is a register with a number in it
                                         String reg=getRegister();
                                         appendMainBuffer("%"+reg+ " = " + "fptosi double "+"%"+i.name+" to i32", true); //just cast it to i32
                                         index="%"+reg;
@@ -1228,7 +1268,7 @@ ret ::= RETURN exp:x {:
                             appendMainBuffer(loadLLVM("%"+reg, "double", "double", x.scope+x.name, "8"), true);
                             appendMainBuffer("ret double " + "%"+reg, true); 
                             getRegister(); 
-                        }else if(x.type == Type.RNUM){
+                        }else if(x.type == Type.RVALUE){
                             appendMainBuffer("ret double " + x.scope+x.name, true);  //use directly the regitter
                              getRegister();
                         }
@@ -1292,7 +1332,7 @@ print_func ::=  PRINT RO STRING:value RC {:
                                                             ValueObj param = x.get(i);                                                
                                                     if(param.type==Type.IMMEDIATE){ //if it is an immediate
                                                         printBuffer.append("double "+param.value); //just append the value
-                                                    }else if(param.type==Type.RNUM){ //if it is a register number
+                                                    }else if(param.type==Type.RVALUE){ //if it is a register number
                                                         printBuffer.append("double %"+param.name); //append the register
                                                     }else if(param.type==Type.NUMBER){ //if it is a number
                                                         String reg1 = getRegister(); //load the register
@@ -1333,7 +1373,7 @@ print_func ::=  PRINT RO STRING:value RC {:
                                                             ValueObj param = x.get(i);                                                
                                                     if(param.type==Type.IMMEDIATE){ //if it is an immediate
                                                         printBuffer2.append("double "+param.value); //just append the value
-                                                    }else if(param.type==Type.RNUM){ //if it is a register number
+                                                    }else if(param.type==Type.RVALUE){ //if it is a register number
                                                         printBuffer2.append("double %"+param.name); //append the register
                                                     }else if(param.type==Type.NUMBER){ //if it is a number
                                                         String reg1 = getRegister(); //load the register
@@ -1399,7 +1439,7 @@ func_call ::= ID:fName RO  func_param_list:x RC {: //function invocatio
                                                     ValueObj param = x.get(i);                                                
                                                     if(param.type==Type.IMMEDIATE){ //if it is an immediate
                                                         parameters.append("double "+param.value); //just append the value
-                                                    }else if(param.type==Type.RNUM){ //if it is a register number
+                                                    }else if(param.type==Type.RVALUE){ //if it is a register number
                                                         parameters.append("double %"+param.name); //append the register
                                                     }else if(param.type==Type.NUMBER){ //if it is a number
                                                         String reg1 = getRegister(); //load the register
