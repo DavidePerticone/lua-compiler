@@ -798,15 +798,13 @@ exp ::= RO exp:x RC {: RESULT = x; :}
 ;
 
 //Expression list like 2*2, 2, 4, 2^2
-ass_list ::= ass_list CM ass_exp:x {: currentSymTable.expList.add(x);   :}| ass_exp:x {: currentSymTable.expList.add(x);   :}
-             
+ass_list ::=    ass_list CM ass_exp:x {: currentSymTable.expList.add(x);   :}
+              | ass_exp:x {: currentSymTable.expList.add(x);   :}
+;
 
-             ;
-ass_exp ::= exp:x {:
-                        RESULT=x;
-                :}
 
-            ;
+ass_exp ::= exp:x {: RESULT=x; :}
+;
 
 
 
@@ -814,22 +812,23 @@ ass_exp ::= exp:x {:
 
 local_var_list ::= LOCAL var_list; //TODO modify simple assignment based on local/global
 local_var_init ::= local_var_list EQ ass_list {://check is sizes match and generate error if not
-                                            for(int i=0; i<currentSymTable.varList.size(); i++){ //var list stores the ValueObj of those var
-                                                ValueObj ValueObjectOfVar = currentSymTable.varList.get(i); //get valueObj of that var
-                                                ValueObj tmp = currentSymTable.get(ValueObjectOfVar.name); //try to get it from symbol table
-                                                 if(tmp == null){				                     //if null, it has never been declared
-		                                         currentSymTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
-                                                 ValueObjectOfVar.setLocal(); //set local to distinguish in var init
-                                                 initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
-                                                 }else{
-                                                    initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
-                                                    }
+                                                  for(int i=0; i<currentSymTable.varList.size(); i++){ //var list stores the ValueObj of those var
+                                                      ValueObj ValueObjectOfVar = currentSymTable.varList.get(i); //get valueObj of that var
+                                                      ValueObj tmp = currentSymTable.get(ValueObjectOfVar.name); //try to get it from symbol table
+                                                      if(tmp == null){				                     //if null, it has never been declared
+		                                                    currentSymTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
+                                                        ValueObjectOfVar.setLocal(); //set local to distinguish in var init
+                                                        initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
+                                                      }else{
+                                                        initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
+                                                      }
                                                
-                                            }
-                                            currentSymTable.varList.clear();
-                                            currentSymTable.expList.clear();
+                                                  }
+                                                  currentSymTable.varList.clear();
+                                                  currentSymTable.expList.clear();
                                             
-                                            :};
+                                              :}
+;
 
 
 //global declaration and initialization
@@ -842,17 +841,17 @@ global_var_init ::= var_list EQ ass_list  {://check is sizes match and generate 
                                                     if(currentSymTable.isFunc){
                                                         pSemError("CANNOT DECLARE GLOBAL VARIABLES INSIDE FUNCTION");
                                                     }
-		                                         globalSymbolTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
-                                                 initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
+		                                                globalSymbolTable.varTable.put(ValueObjectOfVar.name, ValueObjectOfVar); //put in simbol table
+                                                    initVar(ValueObjectOfVar, currentSymTable.expList.get(i)); //init var
                                                  }else{
                                                     initVar(tmp, currentSymTable.expList.get(i)); //if it has been already declared, pass the valueObj of the symbol table
-                                                    }
+                                                  }
                                                
                                             }
                                             currentSymTable.varList.clear();
                                             currentSymTable.expList.clear();
                                             
-                                            :};
+                                          :};
 
 
 
@@ -866,16 +865,16 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                          pSemError("VARIABLE " +"\""+n.name+"\"" +" ALREADY DECLARED: CANNOT REDECLARE VARIABLE TO ARRAY");
                     }else{
                         Integer dim = currentSymTable.expList.size();
-                    //    @a = common dso_local global [5 x double] zeroinitializer, align 16
-                    //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
-                    String type="["+dim+" x double]";
-                    appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
-                    n.type=Type.TABLE;
-                    n.nElement=dim;
-                    n.setGlobal();
-                    globalSymbolTable.varTable.put(n.name, n);
+                        //    @a = common dso_local global [5 x double] zeroinitializer, align 16
+                        //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
+                        String type="["+dim+" x double]";
+                        appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
+                        n.type=Type.TABLE;
+                        n.nElement=dim;
+                        n.setGlobal();
+                        globalSymbolTable.varTable.put(n.name, n);
 
-                    for(int i = 0; i<dim; i++){
+                      for(int i = 0; i<dim; i++){
                         //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
                         // %2 = getelementptr inbounds [9 x i32], [9 x i32]* %1, i32 0, i32 7
                         String reg = getRegister();
@@ -889,11 +888,11 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                     }
                     currentSymTable.expList.clear();
                     }
-
-
-:}
-                    |var:n EQ BO ass_list error {: pSynWarning("MISSING }");
-                                                     if(currentSymTable.get(n.name) != null){
+                                      :}
+                    |var:n EQ BO ass_list error {: 
+                    
+                    pSynWarning("MISSING }");
+                    if(currentSymTable.get(n.name) != null){
                          pSemError("VARIABLE " +"\""+n.name+"\"" +" ALREADY DECLARED: CANNOT REDECLARE VARIABLE TO ARRAY");
                     }else{
                         Integer dim = currentSymTable.expList.size();
@@ -918,7 +917,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         initVar(arrayCell, currentSymTable.expList.get(i));
 
                     }
-                    currentSymTable.expList.clear();
+                      currentSymTable.expList.clear();
                     } :}|var:n EQ BO  BC {:
 
                     if(currentSymTable.get(n.name) != null){
@@ -928,12 +927,12 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         System.out.println(dim);
                     //    @a = common dso_local global [5 x double] zeroinitializer, align 16
                     //"@"+name+" = " +"global "+type+" "+value+ ", align 8";
-                    String type="["+dim+" x double]";
-                    appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
-                    n.type=Type.TABLE;
-                    n.nElement=dim;
-                    n.setGlobal();
-                    globalSymbolTable.varTable.put(n.name, n);
+                        String type="["+dim+" x double]";
+                        appendGlobalDecBuffer("@"+n.name+ " = " + "global "+ type + " zeroinitializer, align 16", true);
+                        n.type=Type.TABLE;
+                        n.nElement=dim;
+                        n.setGlobal();
+                        globalSymbolTable.varTable.put(n.name, n);
 
                     for(int i = 0; i<dim; i++){
                         //<result> = getelementptr inbounds [<#elements> x <type>], [<#elements> x <type>]* <variable>, i32 0, i32 <index>
@@ -947,7 +946,7 @@ array_declaration ::= var:n EQ BO ass_list BC {:
                         initVar(arrayCell, currentSymTable.expList.get(i));
 
                     }
-                    currentSymTable.expList.clear();
+                      currentSymTable.expList.clear();
                     }
 
 
@@ -961,14 +960,12 @@ assignment ::= var:n EQ ass_exp:x {:
                         ValueObj tmp = currentSymTable.get(n.name);
                          
                         if(tmp == null && n.nElement == null){ //if the variable is not declared and it is not an array cell 
-                             if(currentSymTable.isFunc){ 
+                            if(currentSymTable.isFunc){ 
                                 pSemError("CANNOT DECLARE GLOBAL VARIABLES INSIDE FUNCTION");
-                                }				                    
-		                    globalSymbolTable.varTable.put(n.name, n);//TO DO: need to distinguish here between local and global var
+                            }				                    
+		                        globalSymbolTable.varTable.put(n.name, n);//TO DO: need to distinguish here between local and global var
                             RESULT = initVar(n, x);
-                        }else{ //if it is declared or it is an array cell
-
-                  
+                        }else{ //if it is declared or it is an array cell 
                             if(n.nElement != null){
                                 RESULT = initVar(n, x); //if is is an array cell
                             }else{
@@ -1069,15 +1066,12 @@ var ::= ID:n  {:
 
 block ::= DO {: currentSymTable = new SymbolTable(currentSymTable, false);  :}stmt_list END {: currentSymTable=currentSymTable.getPrev(true);:}
 
-        
-
-
-            ;
+;
 
 //loop condition
 loop_cond ::=  exp:x {: 
                             if(x.type!=Type.BOOL){
-                                 String reg=getRegister();
+                                String reg=getRegister();
                                 RESULT= new ValueObj(reg); 
                                 RESULT.setBool();
                                 RESULT.setLocal();
@@ -1091,30 +1085,33 @@ loop_cond ::=  exp:x {:
 //loop 
 
 for_loop ::= FOR assignment:n {:
-                            currentSymTable = new SymbolTable(currentSymTable, false);
-                            loopCount = ++totLoopCount;
-                            loopList.push(loopCount);    
-                            appendMainBuffer(("br label %for.cond." + loopCount), true);
-                            appendMainBuffer(("for.cond." + loopCount + ":"), true);
-                            :}CM loop_cond:x {: //what to allow?
-                            appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
-                            :}CM {:
-                            appendMainBuffer(("for.inc." + loopCount + ":"), true);
-                            :}exp:y {:
-                            ValueObj tmp=operation("fadd", n, y);
-                            initVar(n, tmp);
-                            appendMainBuffer(("br label %for.cond." + loopCount), true);
-                            appendMainBuffer(("for.body." + loopCount + ":"), true);
+
+                                currentSymTable = new SymbolTable(currentSymTable, false);
+                                loopCount = ++totLoopCount;
+                                loopList.push(loopCount);    
+                                appendMainBuffer(("br label %for.cond." + loopCount), true);
+                                appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                              :}
                             
-                        
+                            CM loop_cond:x {: //what to allow?
+                                              appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                                            :}
+                            CM {:
+                                  appendMainBuffer(("for.inc." + loopCount + ":"), true);
+                                :}
+                            exp:y {:
+                                    ValueObj tmp=operation("fadd", n, y);
+                                    initVar(n, tmp);
+                                    appendMainBuffer(("br label %for.cond." + loopCount), true);
+                                    appendMainBuffer(("for.body." + loopCount + ":"), true);
+                                  :}
+                            DO stmt_list END {:
+                                                loopCount=loopList.pop(); //restore it when statement is finished
+                                                appendMainBuffer(("br label %for.inc." + loopCount), true);
+                                                appendMainBuffer(("for.exit." + loopCount + ":"), true);
+                                                currentSymTable=currentSymTable.getPrev(true);
                             
-                            :}DO stmt_list END {:
-                            loopCount=loopList.pop(); //restore it when statement is finished
-                            appendMainBuffer(("br label %for.inc." + loopCount), true);
-                            appendMainBuffer(("for.exit." + loopCount + ":"), true);
-                            currentSymTable=currentSymTable.getPrev(true);
-                            
-                            :}
+                                              :}
 
                 |FOR error CM loop_cond:x CM exp:y DO  stmt_list END {: pSynError("WRONG LOOP VAR INITIALIZATION: MUST BE var=immediate");:}
            ;
@@ -1288,15 +1285,14 @@ ret ::= RETURN exp:x {:
 
 
 print_func ::=  PRINT RO STRING:value RC {: 
+
+
     int label = genLabelString();
-    
-    
-    
     String s = value;
     s = s.substring(1, s.length() - 1);
     int length = s.length();
     if (!s.contains("\\n"))
-    length++;
+      length++;
     s = s.replace("\\n", "\\0A");
     s = s + "\\00";
     
