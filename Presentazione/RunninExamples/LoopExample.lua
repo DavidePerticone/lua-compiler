@@ -2,7 +2,7 @@
 --While loop
 
 i = 1
-while (i <= 10) do
+while i <= 10 do
   io.write(i)
   i = i + 1
 
@@ -15,7 +15,7 @@ print("\n")
 
 --Numeric for
 
-for i=1, 10, 1 do
+for i=1, 10 do
 print(i)
 end
 

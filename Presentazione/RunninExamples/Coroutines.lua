@@ -29,4 +29,4 @@ co2 = coroutine.create(function()
   end end)
 
 coroutine.resume(co2)
-coroutine.resume(co)
+

@@ -36,7 +36,7 @@ end
    
     print("The Armstrong numbers in between 1 to 500 are : \n")
 
-    for i = 0,  i <= 10000, 1
+    for i = 0, 10000, 1
     do
         if(check_armstrong(i) == 1) then
          print(i)

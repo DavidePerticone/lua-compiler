@@ -1,4 +1,4 @@
 
-if( 126  == 1 and not nil or 1 ) then
-    print("WORKS")
+for i=0, 10, 1 do
+    print("1")
 end

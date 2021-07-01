@@ -19,6 +19,6 @@ init:
 	mkdir source build
 	
 run:
-	java Main provanot.lua
+	java Main Armstrong.lua
 
 new: default run

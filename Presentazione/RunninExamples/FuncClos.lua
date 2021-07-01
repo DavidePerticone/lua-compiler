@@ -13,8 +13,8 @@ Example for:
 -- A Closure is a function that can access local
 -- variables of and enclosing function
 
-function outerFunc()
-	local i = 0
+function outerFunc(x)
+	local i = x
 	return function()
 		i=i+1
 		return i
@@ -26,8 +26,8 @@ function outerFunc()
 end
 
 
-counter, counterAddN = outerFunc() --return a new counter
-counter2 = outerFunc() 			   --return a new counter
+counter, counterAddN = outerFunc(5) --return a new counter
+counter2 = outerFunc(3) 			   --return a new counter
 
 print("First counter, add 1", counter())  --return the increased value of the local variable of the outer function
 print("First counter, addN", counterAddN(3)) --return the increased value by N of the local variable of the outer function

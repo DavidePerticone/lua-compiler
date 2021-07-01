@@ -580,7 +580,6 @@ action code{:
     }
 
     public ValueObj notOperator(ValueObj x){
-                                System.out.println(x.type);
 
         ValueObj RESULT;
         String reg=getRegister();
@@ -644,7 +643,7 @@ non terminal for_loop, stmt_list, stmt;
 non terminal while_loop, repeat_loop, if_block, else_block, ret, include;
 non terminal func_decl_param, prog, function_decl, print_func, declaration;
 non terminal ValueObj var;
-non terminal ValueObj ass_exp, loop_cond, exp, assignment;
+non terminal ValueObj ass_exp, loop_cond, exp, assignment, for_loop_cond;
 non terminal ArrayList<ValueObj> func_param_list;
 non terminal String func_call;
 
@@ -1100,6 +1099,18 @@ loop_cond ::=  exp:x {:
 
                          :} ;
 
+//foor loop condition
+for_loop_cond ::=  exp:x {: 
+                            if(x.type!=Type.BOOL){
+                                System.out.println((ValueObj)stack(-3));
+                                RESULT=logicExpEval("olt", (ValueObj)parser.stack(-3), x);
+                            }else{
+                                RESULT=x;
+                                
+                            }
+
+                         :} ;
+
 //loop 
 
 for_loop ::= FOR assignment:n {:
@@ -1111,7 +1122,7 @@ for_loop ::= FOR assignment:n {:
                                 appendMainBuffer(("for.cond." + loopCount + ":"), true);
                               :}
                             
-                            CM loop_cond:x {: //what to allow?
+                            CM for_loop_cond:x {: //what to allow?
                                               appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
                                             :}
                             CM {:
