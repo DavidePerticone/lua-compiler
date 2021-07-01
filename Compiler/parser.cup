@@ -47,7 +47,7 @@ init with {:
    currentSymTable.currentBuffer=mainBuffer;
 
    /* final output file */
-   bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); 
+   bwr = new BufferedWriter(new FileWriter(new File("out.ll"))); 
 
    /* loopCount needed to count nested loops */
    loopCount = 0;
@@ -554,8 +554,6 @@ action code{:
         op1 = "" + x.value; // just store the value
       } else if (x.type == Type.NUMBER) { // if it is a var
         String reg = getRegister();
-        // loadLLVM(String outName, String outType, String inputType, String inputName,
-        // String align )
         appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true); // load it
         op1 = "%" + reg; // save register where it is loaded
       } else if (x.type == Type.RVALUE) {
@@ -580,6 +578,26 @@ action code{:
       return RESULT;
 
     }
+
+    public ValueObj notOperator(ValueObj x){
+                                System.out.println(x.type);
+
+        ValueObj RESULT;
+        String reg=getRegister();
+        RESULT= new ValueObj(reg); 
+        RESULT.setBool();
+        RESULT.setLocal();
+
+      if(x.type == Type.BOOL){
+           appendMainBuffer("%"+reg + " = xor" +" i1 " +x.scope+x.name+", " + "true", true); //calculate result
+      }else{
+           appendMainBuffer("%"+reg + " = icmp "+ "eq" +" i32 1" +", " + "0", true); 
+      }
+
+      return RESULT;
+    }
+
+     
 
     public int genLabelString() {
       return indexString++;
@@ -784,9 +802,9 @@ exp ::= RO exp:x RC {: RESULT = x; :}
                     bool.setLocal();
                     RESULT = bool;
                 :}  
-| NOT exp:x {:                         
-                    pSemError("NOT LOGICAL OPERATION NOT SUPPORTED");
-                :}  
+| NOT exp:x       {:                         
+                     RESULT = notOperator(x);
+                  :}  
 /* Relational expressions */
 | exp:x  EQ EQ exp:y  {: RESULT=logicExpEval("oeq", x, y);  :}
 | exp:x  NOTEQ exp:y   {: RESULT=logicExpEval("one", x, y); :}

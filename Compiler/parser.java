@@ -745,7 +745,7 @@ public class parser extends java_cup.runtime.lr_parser {
    currentSymTable.currentBuffer=mainBuffer;
 
    /* final output file */
-   bwr = new BufferedWriter(new FileWriter(new File("output.ll"))); 
+   bwr = new BufferedWriter(new FileWriter(new File("out.ll"))); 
 
    /* loopCount needed to count nested loops */
    loopCount = 0;
@@ -1254,8 +1254,6 @@ class CUP$parser$actions {
         op1 = "" + x.value; // just store the value
       } else if (x.type == Type.NUMBER) { // if it is a var
         String reg = getRegister();
-        // loadLLVM(String outName, String outType, String inputType, String inputName,
-        // String align )
         appendMainBuffer(loadLLVM("%" + reg, "double", "double", x.scope + x.name, "8"), true); // load it
         op1 = "%" + reg; // save register where it is loaded
       } else if (x.type == Type.RVALUE) {
@@ -1280,6 +1278,26 @@ class CUP$parser$actions {
       return RESULT;
 
     }
+
+    public ValueObj notOperator(ValueObj x){
+                                System.out.println(x.type);
+
+        ValueObj RESULT;
+        String reg=getRegister();
+        RESULT= new ValueObj(reg); 
+        RESULT.setBool();
+        RESULT.setLocal();
+
+      if(x.type == Type.BOOL){
+           appendMainBuffer("%"+reg + " = xor" +" i1 " +x.scope+x.name+", " + "true", true); //calculate result
+      }else{
+           appendMainBuffer("%"+reg + " = icmp "+ "eq" +" i32 1" +", " + "0", true); 
+      }
+
+      return RESULT;
+    }
+
+     
 
     public int genLabelString() {
       return indexString++;
@@ -1790,8 +1808,8 @@ class CUP$parser$actions {
 		int xright = ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).right;
 		ValueObj x = (ValueObj)((java_cup.runtime.Symbol) CUP$parser$stack.peek()).value;
 		                         
-                    pSemError("NOT LOGICAL OPERATION NOT SUPPORTED");
-                
+                     RESULT = notOperator(x);
+                  
               CUP$parser$result = parser.getSymbolFactory().newSymbol("exp",24, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }
           return CUP$parser$result;

@@ -1,54 +1,4 @@
 
-require "Math.lua"
-require "stack.lua"
-function coroutine(a) 
-
-    local a=5
-    print(a)
-    print("\n")
-
-
-    return 1
-
-end
-
-
-
-a=5
-
-
-coroutine(5)
-
-
-
-
-
-
-stack.pushStack(Math.ceilingSqrt(63))
-stack.pushStack(Math.pow(2, 4))
-stack.pushStack(Math.pow(2.5, 8))
-stack.pushStack(Math.ceilingSqrt(63.5))
-
-stack.printStack()
-print("\n")
-
---TRIANGLE WITH L POPPED FROM STACK
-a = 0
-l= stack.popStack()
-print("Triangle\n")
-for i=0, i<=l, 1 do
-
-    for k=0, k<=i, 1 do
-        print(string.format("%.0f ", a))
-        a=a+1
-    end
-    a=0
-    print("\n")
-
-end
-
---END TRIANGLE
-
 --START BUBBLE SORT
 v = {3,1,2,5,3,6,8,2,1,9}
 size = 10
@@ -93,6 +43,8 @@ end
 print("\n")
 
 --END
+
+
 
 
 

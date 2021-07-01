@@ -4,6 +4,7 @@
 
 import java_cup.runtime.*;
 import java.io.FileReader;
+import java.nio.file.*;
 import java.io.FileNotFoundException;
 
 // See https://github.com/jflex-de/jflex/issues/222
@@ -460,9 +461,6 @@ class Yylex implements java_cup.runtime.Scanner {
     return new Symbol(type, yyline, yycolumn, value);
 	
   }
-
-
-  
 
 
   /**
@@ -1101,13 +1099,22 @@ class Yylex implements java_cup.runtime.Scanner {
             // fall through
           case 76: break;
           case 33:
-            { System.out.println(yytext());
-    String file = yytext().substring(1, yytext().length()-1);
+            { String file = yytext().substring(1, yytext().length()-1);
+   Path path
+            = Paths.get("./" +
+               file);
+ 
+  if (!Files.isReadable(path)){
+     System.out.println("File " +path + " does not exists ");
+     System.exit(-1);
+     return symbol(sym.FNF);
+  }
+    
     try{
     yypushStream(new FileReader(file.trim()));
     yybegin(YYINITIAL);
     return symbol(sym.FILE, file.substring(0, file.length()-4));
-    }catch(FileNotFoundException e){
+    }catch(Exception e){
 
       return symbol(sym.FNF);
 

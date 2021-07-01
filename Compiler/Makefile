@@ -19,6 +19,6 @@ init:
 	mkdir source build
 	
 run:
-	java Main ArrayOutOfBounds.lua
+	java Main provanot.lua
 
 new: default run
