@@ -569,57 +569,37 @@ Line 3-4 of Lua code, generate lines 10-11 of IR code. The variables are already
 
 ### If Else statements
 
-1.  if\_block ::= IF  {:  currentSymTable \= new SymbolTable(currentSymTable, false); 
-    
-2.                      loopCount \= ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
-    
-3.                  :} loop\_cond:x {:
-    
-4.                      appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
-    
-5.                  :}  THEN {:
-    
-6.                      appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt\_list   {:loopCount\=loopList.pop();:} //pop here to retrieve my loop nubmber ;
-    
-7.                           else\_block END
-    
-
-9.                  | IF error stmt\_list else\_block END{: pSynWarning("ERROR IN IF CONDITION");:};
-    
-
-11.  else\_block ::= {: 
-    
-12.                       appendMainBuffer(("br label %if.exit." + loopCount), true);
-    
-13.                  :} ELSE {: 
-    
-14.                      appendMainBuffer(("if.else." + loopCount + ":"), true); 
-    
-15.                      loopList.push(loopCount);
-    
-16.                  :}stmt\_list {:
-    
-
-18.                       loopCount\=loopList.pop();
-    
-19.                      appendMainBuffer(("br label %if.exit." + loopCount), true);
-    
-20.                      appendMainBuffer(("if.exit." + loopCount + ":"), true);
-    
-21.                      currentSymTable\=currentSymTable.getPrev(true);
-    
-
-24.                      :}|
-    
-25.                      {:
-    
-26.                          appendMainBuffer(("br label %if.else." + loopCount), true);
-    
-27.                          appendMainBuffer(("if.else." + loopCount + ":"), true); 
-    
-28.                          currentSymTable\=currentSymTable.getPrev(true);
-    
-29.                      :} ;
+```cup
+if_block ::= IF  {:  currentSymTable = new SymbolTable(currentSymTable, false); 
+                    loopCount = ++totLoopCount; loopList.push(loopCount);//when entering a statement, save the loop number on the stack
+                :} loop_cond:x {:
+                    appendMainBuffer(("br i1 " + x.scope+x.name + ", label %if.body." + loopCount + ", label %if.else." + loopCount), true);
+                :}  THEN {:
+                    appendMainBuffer(("if.body." + loopCount + ":"), true);:} stmt_list   {:loopCount=loopList.pop();:} //pop here to retrieve my loop nubmber ;
+                         else_block END
+ 
+                | IF error stmt_list else_block END{: pSynWarning("ERROR IN IF CONDITION");:};
+ 
+else_block ::= {: 
+                     appendMainBuffer(("br label %if.exit." + loopCount), true);
+                :} ELSE {: 
+                    appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                    loopList.push(loopCount);
+                :}stmt_list {:
+ 
+                     loopCount=loopList.pop();
+                    appendMainBuffer(("br label %if.exit." + loopCount), true);
+                    appendMainBuffer(("if.exit." + loopCount + ":"), true);
+                    currentSymTable=currentSymTable.getPrev(true);
+ 
+ 
+                    :}|
+                    {:
+                        appendMainBuffer(("br label %if.else." + loopCount), true);
+                        appendMainBuffer(("if.else." + loopCount + ":"), true); 
+                        currentSymTable=currentSymTable.getPrev(true);
+                    :} ;
+```		    
     
 
 This parser supports `if-then-else` statements nested (any depth). The implementation of this may seem tricky, but it is actually straightforward. Let us analyze the code in detail:
@@ -636,53 +616,33 @@ This procedure can be applied recursively and always guarantees that each if sta
 
 `Repeat-until` statements corresponds to `do-while` in C code. The parser code to translate it into LLVM IR code is similar (if not almost identical) to the one used to implement the `do-while` of Lua.
 
-2.  repeat\_loop ::= REPEAT  {:
-    
-3.                              currentSymTable \= new SymbolTable(currentSymTable, false); 
-    
-4.                              loopCount \= ++totLoopCount;
-    
-5.                              loopList.push(loopCount); //when entering a statement, save the loop number on the stack
-    
-6.                              appendMainBuffer(("br label %for.body." + loopCount), true);
-    
-7.                              appendMainBuffer(("for.body." + loopCount + ":"), true);
-    
-8.                          :}
-    
-9.                          stmt\_list 
-    
-10.                          {: 
-    
-11.                              loopCount\=loopList.pop(); //restore it when statement is finished                   
-    
-12.                              appendMainBuffer(("br label %for.cond." + loopCount), true);
-    
-
-14.                          :}
-    
-15.                          UNTIL 
-    
-16.                          {:
-    
-17.                              appendMainBuffer(("for.cond." + loopCount + ":"), true);
-    
-18.                          :}
-    
-19.                          loop\_cond:x
-    
-20.                          {:                        
-    
-21.                              appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
-    
-22.                              appendMainBuffer(("for.exit." + loopCount + ":"), true);
-    
-23.                              currentSymTable\=currentSymTable.getPrev(true);
-    
-24.                          :}
-    
-
-26.                     ; 
+```cup
+repeat_loop ::= REPEAT  {:
+                            currentSymTable = new SymbolTable(currentSymTable, false); 
+                            loopCount = ++totLoopCount;
+                            loopList.push(loopCount); //when entering a statement, save the loop number on the stack
+                            appendMainBuffer(("br label %for.body." + loopCount), true);
+                            appendMainBuffer(("for.body." + loopCount + ":"), true);
+                        :}
+                        stmt_list 
+                        {: 
+                            loopCount=loopList.pop(); //restore it when statement is finished                   
+                            appendMainBuffer(("br label %for.cond." + loopCount), true);
+ 
+                        :}
+                        UNTIL 
+                        {:
+                            appendMainBuffer(("for.cond." + loopCount + ":"), true);
+                        :}
+                        loop_cond:x
+                        {:                        
+                            appendMainBuffer(("br i1 " + x.scope+x.name + ", label %for.body." + loopCount + ", label %for.exit." + loopCount), true);
+                            appendMainBuffer(("for.exit." + loopCount + ":"), true);
+                            currentSymTable=currentSymTable.getPrev(true);
+                        :}
+ 
+                   ; 
+```
     
 
 The above code does the following:
@@ -701,68 +661,72 @@ An example
 
 **Lua source code**
 
-i\=6
-while i\>1 do
-    j\=1
+```lua
+i=6
+while i>1 do
+    j=1
     while j<i do
- 
-        print("\*")
-        j\=j+1
+ 
+        print("*")
+        j=j+1
     end
- 
-print( "\\n")
-i\=i\-1
+ 
+print( "\n")
+i=i-1
 end
-
+```
 **After compilation**
 
-declare i32 @printf(i8\*, ...)
-@.str.0 = private constant \[2 x i8\] c"\*\\00", align 1
-@.str.1 = private constant \[2 x i8\] c"\\0A\\00", align 1
- 
+```llvm
+declare i32 @printf(i8*, ...)
+@.str.0 = private constant [2 x i8] c"*\00", align 1
+@.str.1 = private constant [2 x i8] c"\0A\00", align 1
+ 
 @i = global double 6.0, align 8
 @j = global double 1.0, align 8
- 
- 
+ 
+ 
 define void @main(){
-store double 6.0, double\* @i, align 8
+store double 6.0, double* @i, align 8
 br label %for.cond.1
 for.cond.1:
-%1 = load double, double\* @i, align 8
+%1 = load double, double* @i, align 8
 %2 = fcmp ogt double %1, 1.0
 br i1 %2, label %for.body.1, label %for.exit.1
 for.body.1:
-store double 1.0, double\* @j, align 8
+store double 1.0, double* @j, align 8
 br label %for.cond.2
 for.cond.2:
-%3 = load double, double\* @j, align 8
-%4 = load double, double\* @i, align 8
+%3 = load double, double* @j, align 8
+%4 = load double, double* @i, align 8
 %5 = fcmp olt double %3, %4
 br i1 %5, label %for.body.2, label %for.exit.2
 for.body.2:
-%6 = call i32 (i8\*, ...) @printf(i8\* getelementptr inbounds (\[2 x i8\], \[2 x i8\]\* @.str.0, i32 0, i32 0))
-%7 = load double, double\* @j, align 8
+%6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @.str.0, i32 0, i32 0))
+%7 = load double, double* @j, align 8
 %8 = fadd double %7, 1.0
-store double %8, double\* @j, align 8
+store double %8, double* @j, align 8
 br label %for.cond.2
 for.exit.2:
-%9 = call i32 (i8\*, ...) @printf(i8\* getelementptr inbounds (\[2 x i8\], \[2 x i8\]\* @.str.1, i32 0, i32 0))
-%10 = load double, double\* @i, align 8
+%9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @.str.1, i32 0, i32 0))
+%10 = load double, double* @i, align 8
 %11 = fsub double %10, 1.0
-store double %11, double\* @i, align 8
+store double %11, double* @i, align 8
 br label %for.cond.1
 for.exit.1:
 ret void
 }
 
+```
+
 **Output running LLVM IR**
-
-\*\*\*\*\*
-\*\*\*\*
-\*\*\*
-\*\*
-\*
-
+```
+*****
+****
+***
+**
+*
+```
 What has been implemented
 -------------------------
 
@@ -856,41 +820,48 @@ _**NOTE:**_
             1.  Mac: `brew install -with-toolchain llvm`
                 
     2.  Linux: **jFlex v1.8.2** (just copy, paste and press enter in the terminal, even with comments)
+```bash
+	#remove old version is present
+	sudo apt remove jflex
+	#download jFlex archive 
+	cd $HOME
+	wget https://github.com/jflex-de/jflex/releases/download/v1.8.2/jflex-1.8.2.tar.gz
+	#decompress it and move to the correct location
+	sudo tar -C /usr/share -xvzf jflex-1.8.2.tar.gz
+	#create a link in /usr/bin
+	sudo ln -s /usr/share/jflex-1.8.2/bin/jflex /usr/bin/jflex
+	#add correct user rights
+	sudo chmod -R 755 /usr/share/jflex-1.8.2
+	sudo chmod 755 /usr/bin/jflex
+	#remove downloaded archive
+	rm jflex-1.8.2.tar.gz
+```
+
+   3.  **jFlex v1.8.2** (only for macOS) and **CUP** - **NOTE:** For Linux set-up, skip the part regarding the installation of jFlex in the below guide.
         
-        #remove old version is present
-        sudo apt remove jflex
-        #download jFlex archive 
-        cd $HOME
-        wget https://github.com/jflex-de/jflex/releases/download/v1.8.2/jflex-1.8.2.tar.gz
-        #decompress it and move to the correct location
-        sudo tar \-C /usr/share \-xvzf jflex-1.8.2.tar.gz
-        #create a link in /usr/bin
-        sudo ln \-s /usr/share/jflex-1.8.2/bin/jflex /usr/bin/jflex
-        #add correct user rights
-        sudo chmod \-R 755 /usr/share/jflex-1.8.2
-        sudo chmod 755 /usr/bin/jflex
-        #remove downloaded archive
-        rm jflex-1.8.2.tar.gz
-        
-    3.  **jFlex v1.8.2** (only for macOS) and **CUP** - **NOTE:** For Linux set-up, skip the part regarding the installation of jFlex in the below guide.
-        
-        1.  [Install Linux Bash](/compilers/install_linux_bash "compilers:install_linux_bash"): How to download, install and configure Jflex, Java, and Cup in the Ubuntu Linux operating system with bash shell  
+        1.  [Install Linux Bash](https://www.skenz.it/compilers/install_linux_bash "compilers:install_linux_bash"): How to download, install and configure Jflex, Java, and Cup in the Ubuntu Linux operating system with bash shell  
             
-        2.  [Install macOS](/compilers/install_macos "compilers:install_macos"): How to download, install and configure Jflex, Java, and Cup in the macOS operating system  
+        2.  [Install macOS](https://www.skenz.it/compilers/install_macos "compilers:install_macos"): How to download, install and configure Jflex, Java, and Cup in the macOS operating system  
+
+
+
+        
+  
             
-2.  If you want to run one of the examples (_substitute fibonacci\_series with the name of the example you want to run, if different_)
-    
-          \# first two commands create a folder in the desktop to run the example: you can skip them if you want to download it somewhere else
-          cd $HOME/Desktop
-          mkdir \-p run\_example 
-          cd run\_example
-          wget https://www.skenz.it/repository/compilers/ass/lua\_to\_LLVM/fibonacci\_series.zip #substitute fibonacci\_series with the example you want to run
-          unzip fibonacci\_series.zip #substitute fibonacci\_series with the example you want to run
-          rm fibonacci\_series.zip
-          cd fibonacci\_series #substitute fibonacci\_series with the example you want to run
-          make
-          make run
-          lli out.ll
+2.  If you want to run one of the examples (_substitute fibonacci_series with the name of the example you want to run, if different)
+```bash
+      	# first two commands create a folder in the desktop to run the example: you can skip them if you want to download it somewhere else
+        cd $HOME/Desktop
+        mkdir -p run_example 
+        cd run_example
+        wget https://www.skenz.it/repository/compilers/ass/lua_to_LLVM/fibonacci_series.zip #substitute fibonacci_series with the example you want to run
+        unzip fibonacci_series.zip #substitute fibonacci_series with the example you want to run
+        rm fibonacci_series.zip
+        cd fibonacci_series #substitute fibonacci_series with the example you want to run
+        make
+        make run
+        lli out.ll
+```
     
 3.  If you want to run the lua compiler with an arbitrary (compatible with the compiler) .lua file
     
@@ -902,10 +873,11 @@ _**NOTE:**_
         
     2.  As alternative to using the Makefile, run the following commands from the same folder where lua compiler is:
         
-        java java\_cup.Main \-parser parser parser.cup
-        jflex \-skel skeleton.nested scanner.jflex
-        javac \*.java
-        
+```bash
+	 java java_cup.Main -parser parser parser.cup
+	 jflex -skel skeleton.nested scanner.jflex
+	 javac *.java
+```
 
 1.  Take a `.lua` file (from the examples or write a piece of code supported by the compiler)
     
@@ -951,10 +923,4 @@ On Windows it is possible to use both the scanner and compiler, but it is not po
 7.  You can open the out.ll file with a text editor
     
 
-* * *
 
-If you found any error, or if you want to partecipate to the editing of this wiki, please contact: admin \[at\] skenz.it  
-  
-**You can reuse, distribute or modify the content of this page, but you must cite in any document (or webpage) this url: [https://www.skenz.it/compilers/lua\_to\_llvm](http://www.skenz.it/compilers/lua_to_llvm)**
-
-/web/htdocs/www.skenz.it/home/data/pages/compilers/lua\_to\_llvm.txt · Last modified: 2021/07/13 14:20 by davide
